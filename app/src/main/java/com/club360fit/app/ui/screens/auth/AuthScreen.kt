@@ -1,0 +1,175 @@
+package com.club360fit.app.ui.screens.auth
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Icon
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.unit.dp
+import com.club360fit.app.ui.theme.BurgundyPrimary
+import com.club360fit.app.ui.theme.White
+
+@Composable
+fun AuthScreen(
+    isSignIn: Boolean,
+    onAuthSuccess: (Boolean) -> Unit,
+    onNavigateToCreateAccount: (() -> Unit)? = null,
+    onNavigateToSignIn: (() -> Unit)? = null,
+    onBack: () -> Unit,
+    viewModel: AuthViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+) {
+    val state by viewModel.uiState.collectAsState()
+    val scrollState = rememberScrollState()
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back"
+                )
+            }
+            Text(
+                text = if (isSignIn) "Sign in" else "Create account",
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(scrollState)
+                .padding(24.dp)
+        ) {
+            OutlinedTextField(
+                value = state.email,
+                onValueChange = viewModel::updateEmail,
+                label = { Text("Email") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = BurgundyPrimary,
+                    focusedLabelColor = BurgundyPrimary,
+                    cursorColor = BurgundyPrimary,
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface
+                )
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedTextField(
+                value = state.password,
+                onValueChange = viewModel::updatePassword,
+                label = { Text("Password") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = BurgundyPrimary,
+                    focusedLabelColor = BurgundyPrimary,
+                    cursorColor = BurgundyPrimary
+                )
+            )
+
+            if (!isSignIn) {
+                Spacer(modifier = Modifier.height(20.dp))
+                Text(
+                    "Profile (optional for MVP)",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(value = state.name, onValueChange = viewModel::updateName, label = { Text("Name") }, modifier = Modifier.fillMaxWidth(), singleLine = true, colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BurgundyPrimary, focusedLabelColor = BurgundyPrimary, cursorColor = BurgundyPrimary))
+                Spacer(modifier = Modifier.height(12.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(value = state.age, onValueChange = viewModel::updateAge, label = { Text("Age") }, modifier = Modifier.weight(1f), singleLine = true, colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BurgundyPrimary, focusedLabelColor = BurgundyPrimary, cursorColor = BurgundyPrimary))
+                    OutlinedTextField(value = state.height, onValueChange = viewModel::updateHeight, label = { Text("Height") }, modifier = Modifier.weight(1f), singleLine = true, colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BurgundyPrimary, focusedLabelColor = BurgundyPrimary, cursorColor = BurgundyPrimary))
+                    OutlinedTextField(value = state.weight, onValueChange = viewModel::updateWeight, label = { Text("Weight") }, modifier = Modifier.weight(1f), singleLine = true, colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BurgundyPrimary, focusedLabelColor = BurgundyPrimary, cursorColor = BurgundyPrimary))
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedTextField(value = state.phone, onValueChange = viewModel::updatePhone, label = { Text("Phone #") }, modifier = Modifier.fillMaxWidth(), singleLine = true, colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BurgundyPrimary, focusedLabelColor = BurgundyPrimary, cursorColor = BurgundyPrimary))
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedTextField(value = state.medicalConditions, onValueChange = viewModel::updateMedicalConditions, label = { Text("Medical conditions") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BurgundyPrimary, focusedLabelColor = BurgundyPrimary, cursorColor = BurgundyPrimary))
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedTextField(value = state.foodRestrictions, onValueChange = viewModel::updateFoodRestrictions, label = { Text("Food restrictions") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BurgundyPrimary, focusedLabelColor = BurgundyPrimary, cursorColor = BurgundyPrimary))
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedTextField(value = state.mealsPerDay, onValueChange = viewModel::updateMealsPerDay, label = { Text("How many meals per day?") }, modifier = Modifier.fillMaxWidth(), singleLine = true, colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BurgundyPrimary, focusedLabelColor = BurgundyPrimary, cursorColor = BurgundyPrimary))
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedTextField(value = state.workoutFrequency, onValueChange = viewModel::updateWorkoutFrequency, label = { Text("How often do you workout?") }, modifier = Modifier.fillMaxWidth(), singleLine = true, colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BurgundyPrimary, focusedLabelColor = BurgundyPrimary, cursorColor = BurgundyPrimary))
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedTextField(value = state.overallGoal, onValueChange = viewModel::updateOverallGoal, label = { Text("What's your overall goal?") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BurgundyPrimary, focusedLabelColor = BurgundyPrimary, cursorColor = BurgundyPrimary))
+                Spacer(modifier = Modifier.height(12.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("I am an admin", color = MaterialTheme.colorScheme.onSurface)
+                    Switch(checked = state.isAdmin, onCheckedChange = viewModel::updateIsAdmin, colors = androidx.compose.material3.SwitchDefaults.colors(checkedThumbColor = White, checkedTrackColor = BurgundyPrimary))
+                }
+            }
+
+            state.errorMessage?.let { msg ->
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(msg, color = MaterialTheme.colorScheme.error)
+            }
+            Spacer(modifier = Modifier.height(24.dp))
+            Button(
+                onClick = { viewModel.submit(isSignIn) { onAuthSuccess(it) } },
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                enabled = !state.isLoading,
+                colors = ButtonDefaults.buttonColors(containerColor = BurgundyPrimary, contentColor = White)
+            ) {
+                if (state.isLoading) {
+                    CircularProgressIndicator(modifier = Modifier.height(24.dp), color = White)
+                } else {
+                    Text(if (isSignIn) "Sign in" else "Create account")
+                }
+            }
+            if (isSignIn && onNavigateToCreateAccount != null) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(onClick = onNavigateToCreateAccount, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surface, contentColor = BurgundyPrimary)) {
+                    Text("Create account instead")
+                }
+            }
+            if (!isSignIn && onNavigateToSignIn != null) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(onClick = onNavigateToSignIn, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surface, contentColor = BurgundyPrimary)) {
+                    Text("Sign in instead")
+                }
+            }
+        }
+    }
+}

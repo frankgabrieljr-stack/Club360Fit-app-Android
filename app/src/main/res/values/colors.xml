@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Primary brand: burgundy from Club 360 Fit logo -->
+    <color name="burgundy_primary">#641F2B</color>
+    <color name="burgundy_dark">#4A1720</color>
+    <color name="burgundy_light">#8B2D3C</color>
+    <color name="white">#FFFFFF</color>
+    <color name="background_light">#FFFBFB</color>
+    <color name="surface_light">#FFFFFF</color>
+    <color name="on_burgundy">#FFFFFF</color>
+    <color name="on_surface">#1C1B1F</color>
+    <color name="outline">#79747E</color>
+</resources>
