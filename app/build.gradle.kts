@@ -1,14 +1,14 @@
 import java.util.Properties
 
 plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-    id("org.jetbrains.kotlin.plugin.compose")
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.0.21"
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.org.jetbrains.kotlin.android)
+    alias(libs.plugins.org.jetbrains.kotlin.plugin.compose)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 val localProperties = Properties()
-val localPropertiesFile = rootProject.file("local.properties")
+val localPropertiesFile: File = rootProject.file("local.properties")
 if (localPropertiesFile.exists()) {
     localPropertiesFile.inputStream().use { 
         localProperties.load(it) 
@@ -44,6 +44,9 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+    kotlinOptions {
+        jvmTarget = "17"
+    }
     buildFeatures {
         compose = true
         buildConfig = true
@@ -69,9 +72,9 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     debugImplementation(libs.androidx.ui.tooling)
 
-    // Supabase (use gotrue-kt for 2.x auth)
-    implementation(platform("io.github.jan-tennert.supabase:bom:2.5.2"))
-    implementation("io.github.jan-tennert.supabase:gotrue-kt")
-    implementation("io.github.jan-tennert.supabase:postgrest-kt")
-    implementation("io.ktor:ktor-client-android:2.3.12")
+    // Supabase
+    implementation(platform(libs.supabase.bom))
+    implementation(libs.supabase.gotrue)
+    implementation(libs.supabase.postgrest)
+    implementation(libs.ktor.client.android)
 }

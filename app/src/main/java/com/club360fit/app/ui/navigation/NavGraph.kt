@@ -1,6 +1,7 @@
 package com.club360fit.app.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -9,6 +10,8 @@ import com.club360fit.app.ui.screens.welcome.WelcomeScreen
 import com.club360fit.app.ui.screens.auth.AuthScreen
 import com.club360fit.app.ui.screens.client.ClientHomeScreen
 import com.club360fit.app.ui.screens.admin.AdminHomeScreen
+import io.github.jan.supabase.gotrue.auth
+import kotlinx.coroutines.launch
 
 /**
  * Root navigation graph. Welcome -> Auth (Sign In / Create Account) -> Client or Admin home.
@@ -16,6 +19,7 @@ import com.club360fit.app.ui.screens.admin.AdminHomeScreen
 @Composable
 fun Club360FitNavHost() {
     val navController = rememberNavController()
+    val scope = rememberCoroutineScope()
 
     NavHost(
         navController = navController,
@@ -46,9 +50,11 @@ fun Club360FitNavHost() {
         composable(Routes.CLIENT_HOME) {
             ClientHomeScreen(
                 onSignOut = {
-                    SupabaseClient.client.auth.signOut()
-                    navController.navigate(Routes.WELCOME) {
-                        popUpTo(Routes.WELCOME) { inclusive = true }
+                    scope.launch {
+                        SupabaseClient.client.auth.signOut()
+                        navController.navigate(Routes.WELCOME) {
+                            popUpTo(Routes.WELCOME) { inclusive = true }
+                        }
                     }
                 }
             )
@@ -56,9 +62,11 @@ fun Club360FitNavHost() {
         composable(Routes.ADMIN_HOME) {
             AdminHomeScreen(
                 onSignOut = {
-                    SupabaseClient.client.auth.signOut()
-                    navController.navigate(Routes.WELCOME) {
-                        popUpTo(Routes.WELCOME) { inclusive = true }
+                    scope.launch {
+                        SupabaseClient.client.auth.signOut()
+                        navController.navigate(Routes.WELCOME) {
+                            popUpTo(Routes.WELCOME) { inclusive = true }
+                        }
                     }
                 }
             )

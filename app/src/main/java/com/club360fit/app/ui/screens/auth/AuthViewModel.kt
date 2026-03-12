@@ -12,6 +12,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
 
 /**
  * Auth form state. Used for both sign-in and create-account; optional fields only for create-account.
@@ -64,8 +67,9 @@ class AuthViewModel : ViewModel() {
                 }
                 return@launch
             }
-            withContext(Dispatchers.IO) {
-                try {
+            try {
+                // Run Supabase calls on IO dispatcher
+                val isAdmin = withContext(Dispatchers.IO) {
                     val supabase = SupabaseClient.client
                     if (isSignIn) {
                         supabase.auth.signInWith(Email) {
@@ -76,31 +80,32 @@ class AuthViewModel : ViewModel() {
                         supabase.auth.signUpWith(Email) {
                             email = state.email.trim()
                             password = state.password
-                            data = buildMap {
-                                put("name", state.name)
-                                put("age", state.age)
-                                put("height", state.height)
-                                put("weight", state.weight)
-                                put("phone", state.phone)
-                                put("medical_conditions", state.medicalConditions)
-                                put("food_restrictions", state.foodRestrictions)
-                                put("meals_per_day", state.mealsPerDay)
-                                put("workout_frequency", state.workoutFrequency)
-                                put("overall_goal", state.overallGoal)
-                                put("role", if (state.isAdmin) "admin" else "client")
+                            data = buildJsonObject {
+                                put("name", JsonPrimitive(state.name))
+                                put("age", JsonPrimitive(state.age))
+                                put("height", JsonPrimitive(state.height))
+                                put("weight", JsonPrimitive(state.weight))
+                                put("phone", JsonPrimitive(state.phone))
+                                put("medical_conditions", JsonPrimitive(state.medicalConditions))
+                                put("food_restrictions", JsonPrimitive(state.foodRestrictions))
+                                put("meals_per_day", JsonPrimitive(state.mealsPerDay))
+                                put("workout_frequency", JsonPrimitive(state.workoutFrequency))
+                                put("overall_goal", JsonPrimitive(state.overallGoal))
+                                put("role", JsonPrimitive(if (state.isAdmin) "admin" else "client"))
                             }
                         }
                     }
                     val user = supabase.auth.currentUserOrNull()
                     val role = user?.userMetadata?.get("role") as? String
-                    val isAdmin = role == "admin"
-                    _uiState.update { it.copy(isLoading = false) }
-                    onSuccess(isAdmin)
-                } catch (e: Exception) {
-                    val message = e.message ?: "Authentication failed"
-                    _uiState.update {
-                        it.copy(isLoading = false, errorMessage = message)
-                    }
+                    role == "admin"
+                }
+                // Back on main thread: update state and navigate
+                _uiState.update { it.copy(isLoading = false) }
+                onSuccess(isAdmin)
+            } catch (e: Exception) {
+                val message = e.message ?: "Authentication failed"
+                _uiState.update {
+                    it.copy(isLoading = false, errorMessage = message)
                 }
             }
         }
