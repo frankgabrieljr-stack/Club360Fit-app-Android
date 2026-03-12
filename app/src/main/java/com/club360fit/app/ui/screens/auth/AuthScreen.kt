@@ -23,6 +23,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.material.icons.Icons
@@ -32,6 +35,10 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.club360fit.app.ui.theme.BurgundyPrimary
 import com.club360fit.app.ui.theme.White
+import com.club360fit.app.ui.utils.fromFeetInches
+import com.club360fit.app.ui.utils.fromPounds
+import com.club360fit.app.ui.utils.toFeetInches
+import com.club360fit.app.ui.utils.toPounds
 
 @Composable
 fun AuthScreen(
@@ -113,11 +120,76 @@ fun AuthScreen(
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(value = state.name, onValueChange = viewModel::updateName, label = { Text("Name") }, modifier = Modifier.fillMaxWidth(), singleLine = true, colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BurgundyPrimary, focusedLabelColor = BurgundyPrimary, cursorColor = BurgundyPrimary))
                 Spacer(modifier = Modifier.height(12.dp))
+                
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedTextField(value = state.age, onValueChange = viewModel::updateAge, label = { Text("Age") }, modifier = Modifier.weight(1f), singleLine = true, colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BurgundyPrimary, focusedLabelColor = BurgundyPrimary, cursorColor = BurgundyPrimary))
-                    OutlinedTextField(value = state.height, onValueChange = viewModel::updateHeight, label = { Text("Height") }, modifier = Modifier.weight(1f), singleLine = true, colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BurgundyPrimary, focusedLabelColor = BurgundyPrimary, cursorColor = BurgundyPrimary))
-                    OutlinedTextField(value = state.weight, onValueChange = viewModel::updateWeight, label = { Text("Weight") }, modifier = Modifier.weight(1f), singleLine = true, colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BurgundyPrimary, focusedLabelColor = BurgundyPrimary, cursorColor = BurgundyPrimary))
+                    OutlinedTextField(
+                        value = state.age, 
+                        onValueChange = viewModel::updateAge, 
+                        label = { Text("Age") }, 
+                        modifier = Modifier.weight(1f), 
+                        singleLine = true, 
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BurgundyPrimary, focusedLabelColor = BurgundyPrimary, cursorColor = BurgundyPrimary)
+                    )
+
+                    // Imperial Height
+                    val heightCm = state.height.toIntOrNull() ?: 0
+                    val (feet, inches) = heightCm.toFeetInches()
+                    var feetText by remember(heightCm) { mutableStateOf(if (feet > 0) feet.toString() else "") }
+                    var inchesText by remember(heightCm) { mutableStateOf(if (inches > 0) inches.toString() else "") }
+
+                    OutlinedTextField(
+                        value = feetText,
+                        onValueChange = {
+                            feetText = it.filter(Char::isDigit)
+                            val f = feetText.toIntOrNull() ?: 0
+                            val i = inchesText.toIntOrNull() ?: 0
+                            viewModel.updateHeight(fromFeetInches(f, i).toString())
+                        },
+                        label = { Text("Height (ft)") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BurgundyPrimary, focusedLabelColor = BurgundyPrimary, cursorColor = BurgundyPrimary)
+                    )
+                    OutlinedTextField(
+                        value = inchesText,
+                        onValueChange = {
+                            inchesText = it.filter(Char::isDigit)
+                            val f = feetText.toIntOrNull() ?: 0
+                            val i = inchesText.toIntOrNull() ?: 0
+                            viewModel.updateHeight(fromFeetInches(f, i).toString())
+                        },
+                        label = { Text("Height (in)") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BurgundyPrimary, focusedLabelColor = BurgundyPrimary, cursorColor = BurgundyPrimary)
+                    )
                 }
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                // Imperial Weight
+                val weightKg = state.weight.toIntOrNull() ?: 0
+                var weightLbsText by remember(weightKg) {
+                    mutableStateOf(if (weightKg > 0) weightKg.toPounds().toString() else "")
+                }
+                
+                OutlinedTextField(
+                    value = weightLbsText, 
+                    onValueChange = {
+                        weightLbsText = it.filter(Char::isDigit)
+                        val lbs = weightLbsText.toIntOrNull()
+                        if (lbs != null) {
+                            viewModel.updateWeight(fromPounds(lbs).toString())
+                        } else {
+                            viewModel.updateWeight("")
+                        }
+                    }, 
+                    label = { Text("Weight (lbs)") }, 
+                    modifier = Modifier.fillMaxWidth(), 
+                    singleLine = true, 
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BurgundyPrimary, focusedLabelColor = BurgundyPrimary, cursorColor = BurgundyPrimary)
+                )
+
                 Spacer(modifier = Modifier.height(12.dp))
                 OutlinedTextField(value = state.phone, onValueChange = viewModel::updatePhone, label = { Text("Phone #") }, modifier = Modifier.fillMaxWidth(), singleLine = true, colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BurgundyPrimary, focusedLabelColor = BurgundyPrimary, cursorColor = BurgundyPrimary))
                 Spacer(modifier = Modifier.height(12.dp))

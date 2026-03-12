@@ -12,9 +12,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonPrimitive
 
 /**
  * Auth form state. Used for both sign-in and create-account; optional fields only for create-account.
@@ -69,7 +70,7 @@ class AuthViewModel : ViewModel() {
             }
             try {
                 // Run Supabase calls on IO dispatcher
-                val isAdmin = withContext(Dispatchers.IO) {
+                val isAdminResult = withContext(Dispatchers.IO) {
                     val supabase = SupabaseClient.client
                     if (isSignIn) {
                         supabase.auth.signInWith(Email) {
@@ -95,13 +96,15 @@ class AuthViewModel : ViewModel() {
                             }
                         }
                     }
-                    val user = supabase.auth.currentUserOrNull()
-                    val role = user?.userMetadata?.get("role") as? String
+                    
+                    // Retrieve user info and check role from metadata
+                    val user = supabase.auth.retrieveUserForCurrentSession(updateSession = true)
+                    val role = user.userMetadata?.get("role")?.jsonPrimitive?.contentOrNull
                     role == "admin"
                 }
-                // Back on main thread: update state and navigate
+
                 _uiState.update { it.copy(isLoading = false) }
-                onSuccess(isAdmin)
+                onSuccess(isAdminResult)
             } catch (e: Exception) {
                 val message = e.message ?: "Authentication failed"
                 _uiState.update {

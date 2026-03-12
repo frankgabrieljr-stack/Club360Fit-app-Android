@@ -1,0 +1,34 @@
+package com.club360fit.app.data
+
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class ClientDto(
+    val id: String? = null,
+    @SerialName("user_id")
+    val userId: String,
+    @SerialName("full_name")
+    val fullName: String?,
+    val age: Int? = null,
+    @SerialName("height_cm")
+    val heightCm: Int? = null,
+    @SerialName("weight_kg")
+    val weightKg: Int? = null,
+    val phone: String? = null,
+    @SerialName("medical_conditions")
+    val medicalConditions: String? = null,
+    @SerialName("food_restrictions")
+    val foodRestrictions: String? = null,
+    val goal: String?,
+    @SerialName("can_view_nutrition")
+    val canViewNutrition: Boolean = false,
+    @SerialName("can_view_workouts")
+    val canViewWorkouts: Boolean = false,
+    @SerialName("can_view_payments")
+    val canViewPayments: Boolean = false,
+    @SerialName("can_view_events")
+    val canViewEvents: Boolean = false,
+    @SerialName("last_active")
+    val lastActive: String? = null
+)

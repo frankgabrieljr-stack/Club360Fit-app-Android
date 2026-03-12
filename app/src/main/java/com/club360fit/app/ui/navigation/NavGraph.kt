@@ -10,6 +10,9 @@ import com.club360fit.app.ui.screens.welcome.WelcomeScreen
 import com.club360fit.app.ui.screens.auth.AuthScreen
 import com.club360fit.app.ui.screens.client.ClientHomeScreen
 import com.club360fit.app.ui.screens.admin.AdminHomeScreen
+import com.club360fit.app.ui.screens.admin.ClientDetailScreen
+import com.club360fit.app.ui.screens.admin.ClientProfileScreen
+import com.club360fit.app.ui.screens.profile.UserProfileScreen
 import io.github.jan.supabase.gotrue.auth
 import kotlinx.coroutines.launch
 
@@ -56,7 +59,8 @@ fun Club360FitNavHost() {
                             popUpTo(Routes.WELCOME) { inclusive = true }
                         }
                     }
-                }
+                },
+                onOpenProfile = { navController.navigate(Routes.MY_PROFILE) }
             )
         }
         composable(Routes.ADMIN_HOME) {
@@ -68,7 +72,34 @@ fun Club360FitNavHost() {
                             popUpTo(Routes.WELCOME) { inclusive = true }
                         }
                     }
+                },
+                onOpenProfile = { navController.navigate(Routes.MY_PROFILE) },
+                onOpenClientDetails = { clientId ->
+                    navController.navigate("${Routes.CLIENT_DETAIL}/$clientId")
+                },
+                onOpenClientProfile = { clientId ->
+                    navController.navigate("${Routes.CLIENT_PROFILE}/${clientId ?: "new"}")
                 }
+            )
+        }
+        composable("${Routes.CLIENT_DETAIL}/{clientId}") { backStackEntry ->
+            val clientId = backStackEntry.arguments?.getString("clientId") ?: return@composable
+            ClientDetailScreen(
+                clientId = clientId,
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable("${Routes.CLIENT_PROFILE}/{clientId}") { backStackEntry ->
+            val clientId = backStackEntry.arguments?.getString("clientId")
+            ClientProfileScreen(
+                clientId = clientId.takeUnless { it == "new" },
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable(Routes.MY_PROFILE) {
+            UserProfileScreen(
+                onBack = { navController.popBackStack() },
+                onEditProfile = { /* TODO: navigate to edit profile screen */ navController.popBackStack() }
             )
         }
     }

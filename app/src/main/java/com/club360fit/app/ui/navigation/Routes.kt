@@ -9,4 +9,7 @@ object Routes {
     const val CREATE_ACCOUNT = "create_account"
     const val CLIENT_HOME = "client_home"
     const val ADMIN_HOME = "admin_home"
+    const val CLIENT_DETAIL = "client_detail"
+    const val CLIENT_PROFILE = "client_profile"
+    const val MY_PROFILE = "my_profile"
 }
