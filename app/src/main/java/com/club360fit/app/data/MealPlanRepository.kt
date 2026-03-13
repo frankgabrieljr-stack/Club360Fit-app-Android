@@ -19,6 +19,25 @@ object MealPlanRepository {
             .firstOrNull()
     }
 
+    /** All meal plans for a client, newest week first. */
+    suspend fun getAllPlans(clientId: String): List<MealPlanDto> = withContext(Dispatchers.IO) {
+        client.postgrest["meal_plans"]
+            .select {
+                filter { eq("client_id", clientId) }
+                order("week_start", order = Order.DESCENDING)
+            }
+            .decodeList<MealPlanDto>()
+    }
+
+    suspend fun getPlanById(id: String): MealPlanDto? = withContext(Dispatchers.IO) {
+        client.postgrest["meal_plans"]
+            .select {
+                filter { eq("id", id) }
+            }
+            .decodeList<MealPlanDto>()
+            .firstOrNull()
+    }
+
     suspend fun upsertPlan(plan: MealPlanDto) = withContext(Dispatchers.IO) {
         client.postgrest["meal_plans"].upsert(plan)
     }

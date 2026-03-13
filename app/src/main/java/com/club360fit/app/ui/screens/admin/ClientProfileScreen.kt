@@ -47,6 +47,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.club360fit.app.data.MealPlanDto
 import com.club360fit.app.data.MealPlanRepository
+import com.club360fit.app.data.ProgressCheckInDto
+import com.club360fit.app.data.ProgressRepository
 import com.club360fit.app.data.WorkoutPlanDto
 import com.club360fit.app.data.WorkoutPlanRepository
 import com.club360fit.app.ui.theme.BurgundyPrimary
@@ -75,15 +77,20 @@ fun ClientProfileScreen(
     
     var showWorkoutDialog by remember { mutableStateOf(false) }
     var showMealDialog by remember { mutableStateOf(false) }
+    var showProgressDialog by remember { mutableStateOf(false) }
+    var editingWorkoutPlanId by remember { mutableStateOf<String?>(null) }
+    var editingMealPlanId by remember { mutableStateOf<String?>(null) }
 
-    // Read-only summaries for current plans
-    var workoutSummary by remember { mutableStateOf<WorkoutPlanDto?>(null) }
-    var mealSummary by remember { mutableStateOf<MealPlanDto?>(null) }
+    var workoutPlans by remember { mutableStateOf<List<WorkoutPlanDto>>(emptyList()) }
+    var mealPlans by remember { mutableStateOf<List<MealPlanDto>>(emptyList()) }
+    var progressCheckIns by remember { mutableStateOf<List<ProgressCheckInDto>>(emptyList()) }
+    var refreshKey by remember { mutableStateOf(0) }
 
-    LaunchedEffect(state.client.id) {
+    LaunchedEffect(state.client.id, refreshKey) {
         val id = state.client.id ?: return@LaunchedEffect
-        workoutSummary = WorkoutPlanRepository.getCurrentPlan(id)
-        mealSummary = MealPlanRepository.getCurrentPlan(id)
+        workoutPlans = WorkoutPlanRepository.getAllPlans(id)
+        mealPlans = MealPlanRepository.getAllPlans(id)
+        progressCheckIns = ProgressRepository.getForClient(id)
     }
 
     Scaffold(
@@ -148,54 +155,140 @@ fun ClientProfileScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "Meal Plan",
+                    text = "Meal plans you've assigned",
                     style = MaterialTheme.typography.titleMedium,
                     color = BurgundyPrimary
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                if (mealSummary != null) {
+                if (mealPlans.isEmpty()) {
                     Text(
-                        text = mealSummary!!.title,
-                        style = MaterialTheme.typography.labelLarge
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = mealSummary!!.planText,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                } else {
-                    Text(
-                        text = "No meal plan assigned yet.",
+                        text = "No meal plans yet. Add one for a specific week.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                } else {
+                    mealPlans.forEach { plan ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Week of ${plan.weekStart} – ${plan.title}", style = MaterialTheme.typography.bodyMedium)
+                                if (plan.planText.isNotBlank()) {
+                                    Text(
+                                        plan.planText.take(80) + if (plan.planText.length > 80) "…" else "",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                            TextButton(onClick = {
+                                editingMealPlanId = plan.id
+                                showMealDialog = true
+                            }) { Text("Edit", color = BurgundyPrimary) }
+                        }
+                    }
                 }
+                Button(
+                    onClick = {
+                        editingMealPlanId = null
+                        showMealDialog = true
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = BurgundyPrimary.copy(alpha = 0.1f), contentColor = BurgundyPrimary)
+                ) { Text("Add meal plan") }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "Workout Plan",
+                    text = "Workout plans you've assigned",
                     style = MaterialTheme.typography.titleMedium,
                     color = BurgundyPrimary
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                if (workoutSummary != null) {
+                if (workoutPlans.isEmpty()) {
                     Text(
-                        text = workoutSummary!!.title,
-                        style = MaterialTheme.typography.labelLarge
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = workoutSummary!!.planText,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                } else {
-                    Text(
-                        text = "No workout plan assigned yet.",
+                        text = "No workout plans yet. Add one for a specific week.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                } else {
+                    workoutPlans.forEach { plan ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Week of ${plan.weekStart} – ${plan.title}", style = MaterialTheme.typography.bodyMedium)
+                                if (plan.planText.isNotBlank()) {
+                                    Text(
+                                        plan.planText.take(80) + if (plan.planText.length > 80) "…" else "",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                            TextButton(onClick = {
+                                editingWorkoutPlanId = plan.id
+                                showWorkoutDialog = true
+                            }) { Text("Edit", color = BurgundyPrimary) }
+                        }
+                    }
                 }
+                Button(
+                    onClick = {
+                        editingWorkoutPlanId = null
+                        showWorkoutDialog = true
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = BurgundyPrimary.copy(alpha = 0.1f), contentColor = BurgundyPrimary)
+                ) { Text("Add workout plan") }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "Progress tracker",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = BurgundyPrimary
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                if (progressCheckIns.isEmpty()) {
+                    Text(
+                        text = "No check-ins yet. Client or you can add progress entries.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    progressCheckIns.forEach { checkIn ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("${checkIn.checkInDate}", style = MaterialTheme.typography.labelLarge)
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    checkIn.weightKg?.let { Text("${it} kg", style = MaterialTheme.typography.bodySmall) }
+                                    if (checkIn.workoutDone) Text("Workout ✓", style = MaterialTheme.typography.bodySmall)
+                                    if (checkIn.mealsFollowed) Text("Meals ✓", style = MaterialTheme.typography.bodySmall)
+                                }
+                                if (checkIn.notes.isNotBlank()) {
+                                    Text(checkIn.notes, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                        }
+                    }
+                }
+                Button(
+                    onClick = { showProgressDialog = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = BurgundyPrimary.copy(alpha = 0.1f), contentColor = BurgundyPrimary)
+                ) { Text("Add progress check-in") }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -304,19 +397,6 @@ fun ClientProfileScreen(
                     checked = state.client.canViewEvents,
                     onChecked = { viewModel.updatePrivilege(events = it) }
                 )
-                
-                Spacer(modifier = Modifier.height(24.dp))
-                Button(
-                    onClick = { showWorkoutDialog = true },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = BurgundyPrimary.copy(alpha = 0.1f), contentColor = BurgundyPrimary)
-                ) { Text("Edit workout plan") }
-                Spacer(Modifier.height(8.dp))
-                Button(
-                    onClick = { showMealDialog = true },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = BurgundyPrimary.copy(alpha = 0.1f), contentColor = BurgundyPrimary)
-                ) { Text("Edit meal plan") }
 
                 Spacer(modifier = Modifier.height(24.dp))
                 Row(
@@ -362,16 +442,33 @@ fun ClientProfileScreen(
         EditPlanDialog(
             title = "Workout plan",
             clientId = state.client.id!!,
+            editingPlanId = editingWorkoutPlanId,
             isWorkout = true,
-            onDismiss = { showWorkoutDialog = false }
+            onDismiss = {
+                showWorkoutDialog = false
+                editingWorkoutPlanId = null
+            },
+            onSaved = { refreshKey++ }
         )
     }
     if (showMealDialog && state.client.id != null) {
         EditPlanDialog(
             title = "Meal plan",
             clientId = state.client.id!!,
+            editingPlanId = editingMealPlanId,
             isWorkout = false,
-            onDismiss = { showMealDialog = false }
+            onDismiss = {
+                showMealDialog = false
+                editingMealPlanId = null
+            },
+            onSaved = { refreshKey++ }
+        )
+    }
+    if (showProgressDialog && state.client.id != null) {
+        AddProgressCheckInDialog(
+            clientId = state.client.id!!,
+            onDismiss = { showProgressDialog = false },
+            onSaved = { refreshKey++ }
         )
     }
 }
@@ -380,8 +477,10 @@ fun ClientProfileScreen(
 private fun EditPlanDialog(
     title: String,
     clientId: String,
+    editingPlanId: String?,
     isWorkout: Boolean,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onSaved: () -> Unit = {}
 ) {
     var weekStartText by remember { mutableStateOf(LocalDate.now().toString()) }
     var planTitle by remember { mutableStateOf("") }
@@ -390,19 +489,25 @@ private fun EditPlanDialog(
     var error by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(clientId, isWorkout) {
-        if (isWorkout) {
-            WorkoutPlanRepository.getCurrentPlan(clientId)?.let {
-                planTitle = it.title
-                planText = it.planText
-                weekStartText = it.weekStart.toString()
+    LaunchedEffect(clientId, isWorkout, editingPlanId) {
+        if (editingPlanId != null) {
+            if (isWorkout) {
+                WorkoutPlanRepository.getPlanById(editingPlanId)?.let {
+                    planTitle = it.title
+                    planText = it.planText
+                    weekStartText = it.weekStart.toString()
+                }
+            } else {
+                MealPlanRepository.getPlanById(editingPlanId)?.let {
+                    planTitle = it.title
+                    planText = it.planText
+                    weekStartText = it.weekStart.toString()
+                }
             }
         } else {
-            MealPlanRepository.getCurrentPlan(clientId)?.let {
-                planTitle = it.title
-                planText = it.planText
-                weekStartText = it.weekStart.toString()
-            }
+            weekStartText = LocalDate.now().toString()
+            planTitle = ""
+            planText = ""
         }
     }
 
@@ -454,6 +559,7 @@ private fun EditPlanDialog(
                             if (isWorkout) {
                                 WorkoutPlanRepository.upsertPlan(
                                     WorkoutPlanDto(
+                                        id = editingPlanId,
                                         clientId = clientId,
                                         title = planTitle,
                                         weekStart = date,
@@ -463,6 +569,7 @@ private fun EditPlanDialog(
                             } else {
                                 MealPlanRepository.upsertPlan(
                                     MealPlanDto(
+                                        id = editingPlanId,
                                         clientId = clientId,
                                         title = planTitle,
                                         weekStart = date,
@@ -471,6 +578,7 @@ private fun EditPlanDialog(
                                 )
                             }
                             isSaving = false
+                            onSaved()
                             onDismiss()
                         } catch (e: Exception) {
                             isSaving = false
@@ -486,6 +594,107 @@ private fun EditPlanDialog(
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancel") }
         }
+    )
+}
+
+@Composable
+private fun AddProgressCheckInDialog(
+    clientId: String,
+    onDismiss: () -> Unit,
+    onSaved: () -> Unit
+) {
+    var dateText by remember { mutableStateOf(LocalDate.now().toString()) }
+    var weightText by remember { mutableStateOf("") }
+    var notes by remember { mutableStateOf("") }
+    var workoutDone by remember { mutableStateOf(false) }
+    var mealsFollowed by remember { mutableStateOf(false) }
+    var isSaving by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Progress check-in") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = dateText,
+                    onValueChange = { dateText = it },
+                    label = { Text("Date (YYYY-MM-DD)") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = weightText,
+                    onValueChange = { weightText = it },
+                    label = { Text("Weight (kg, optional)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    label = { Text("Notes") },
+                    modifier = Modifier.fillMaxWidth().height(80.dp),
+                    maxLines = 3
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Workout completed?", style = MaterialTheme.typography.bodyMedium)
+                    Switch(checked = workoutDone, onCheckedChange = { workoutDone = it }, colors = SwitchDefaults.colors(checkedThumbColor = BurgundyPrimary))
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Meals followed?", style = MaterialTheme.typography.bodyMedium)
+                    Switch(checked = mealsFollowed, onCheckedChange = { mealsFollowed = it }, colors = SwitchDefaults.colors(checkedThumbColor = BurgundyPrimary))
+                }
+                error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = !isSaving,
+                onClick = {
+                    val date = runCatching { LocalDate.parse(dateText) }.getOrNull()
+                    if (date == null) {
+                        error = "Enter a valid date."
+                        return@TextButton
+                    }
+                    val weight = weightText.toDoubleOrNull()
+                    isSaving = true
+                    error = null
+                    scope.launch {
+                        try {
+                            ProgressRepository.addCheckIn(
+                                ProgressCheckInDto(
+                                    clientId = clientId,
+                                    checkInDate = date,
+                                    weightKg = weight,
+                                    notes = notes,
+                                    workoutDone = workoutDone,
+                                    mealsFollowed = mealsFollowed
+                                )
+                            )
+                            isSaving = false
+                            onSaved()
+                            onDismiss()
+                        } catch (e: Exception) {
+                            isSaving = false
+                            error = e.message ?: "Failed to save"
+                        }
+                    }
+                }
+            ) {
+                if (isSaving) CircularProgressIndicator(Modifier.size(16.dp))
+                else Text("Save", color = BurgundyPrimary)
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
 }
 

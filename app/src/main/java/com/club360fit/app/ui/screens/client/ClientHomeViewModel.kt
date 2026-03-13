@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.club360fit.app.data.ClientSelfRepository
 import com.club360fit.app.data.MealPlanDto
 import com.club360fit.app.data.MealPlanRepository
+import com.club360fit.app.data.ProgressCheckInDto
+import com.club360fit.app.data.ProgressRepository
 import com.club360fit.app.data.ScheduleEvent
 import com.club360fit.app.data.ScheduleRepository
 import com.club360fit.app.data.WorkoutPlanDto
@@ -17,9 +19,13 @@ import java.time.LocalDate
 data class ClientHomeUiState(
     val isLoading: Boolean = true,
     val error: String? = null,
+    val clientId: String? = null,
     val nextSession: ScheduleEvent? = null,
     val workoutPlan: WorkoutPlanDto? = null,
-    val mealPlan: MealPlanDto? = null
+    val mealPlan: MealPlanDto? = null,
+    val workoutPlans: List<WorkoutPlanDto> = emptyList(),
+    val mealPlans: List<MealPlanDto> = emptyList(),
+    val progressCheckIns: List<ProgressCheckInDto> = emptyList()
 )
 
 class ClientHomeViewModel : ViewModel() {
@@ -54,12 +60,19 @@ class ClientHomeViewModel : ViewModel() {
                 
                 val workout = WorkoutPlanRepository.getCurrentPlan(clientId)
                 val meal = MealPlanRepository.getCurrentPlan(clientId)
+                val allWorkouts = WorkoutPlanRepository.getAllPlans(clientId)
+                val allMeals = MealPlanRepository.getAllPlans(clientId)
+                val checkIns = ProgressRepository.getOwnCheckIns(clientId)
                 
                 _uiState.value = ClientHomeUiState(
                     isLoading = false,
+                    clientId = clientId,
                     nextSession = next,
                     workoutPlan = workout,
-                    mealPlan = meal
+                    mealPlan = meal,
+                    workoutPlans = allWorkouts,
+                    mealPlans = allMeals,
+                    progressCheckIns = checkIns
                 )
             } catch (e: Exception) {
                 _uiState.value = ClientHomeUiState(

@@ -19,6 +19,25 @@ object WorkoutPlanRepository {
             .firstOrNull()
     }
 
+    /** All workout plans for a client, newest week first. */
+    suspend fun getAllPlans(clientId: String): List<WorkoutPlanDto> = withContext(Dispatchers.IO) {
+        client.postgrest["workout_plans"]
+            .select {
+                filter { eq("client_id", clientId) }
+                order("week_start", order = Order.DESCENDING)
+            }
+            .decodeList<WorkoutPlanDto>()
+    }
+
+    suspend fun getPlanById(id: String): WorkoutPlanDto? = withContext(Dispatchers.IO) {
+        client.postgrest["workout_plans"]
+            .select {
+                filter { eq("id", id) }
+            }
+            .decodeList<WorkoutPlanDto>()
+            .firstOrNull()
+    }
+
     suspend fun upsertPlan(plan: WorkoutPlanDto) = withContext(Dispatchers.IO) {
         client.postgrest["workout_plans"].upsert(plan)
     }
