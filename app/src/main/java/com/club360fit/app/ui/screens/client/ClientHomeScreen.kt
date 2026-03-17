@@ -26,14 +26,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,18 +47,20 @@ import com.club360fit.app.data.ProgressCheckInDto
 import com.club360fit.app.data.ProgressRepository
 import com.club360fit.app.data.WorkoutPlanDto
 import com.club360fit.app.ui.theme.BurgundyPrimary
+import com.club360fit.app.ui.utils.toDisplayDate
+import com.club360fit.app.ui.utils.toPounds
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
 @Composable
 fun ClientHomeScreen(
-    onSignOut: () -> Unit,
     onOpenProfile: () -> Unit,
+    onOpenGallery: () -> Unit,
     viewModel: ClientHomeViewModel = viewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
     val scrollState = rememberScrollState()
-    
+    var selectedTab by remember { mutableIntStateOf(0) } // 0 = Home, 1 = Gallery
     var showWorkoutDialog by remember { mutableStateOf(false) }
     var showMealDialog by remember { mutableStateOf(false) }
     var showProgressDialog by remember { mutableStateOf(false) }
@@ -75,7 +80,7 @@ fun ClientHomeScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Client Home",
+                text = if (selectedTab == 0) "Client Home" else "Transformation Gallery",
                 style = MaterialTheme.typography.headlineLarge,
                 color = BurgundyPrimary
             )
@@ -88,11 +93,27 @@ fun ClientHomeScreen(
             }
         }
 
-        if (state.isLoading) {
+        TabRow(selectedTabIndex = selectedTab) {
+            Tab(
+                selected = selectedTab == 0,
+                onClick = { selectedTab = 0 },
+                text = { Text("Home") }
+            )
+            Tab(
+                selected = selectedTab == 1,
+                onClick = { 
+                    selectedTab = 1
+                    onOpenGallery()
+                },
+                text = { Text("Gallery") }
+            )
+        }
+
+        if (state.isLoading && selectedTab == 0) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = BurgundyPrimary)
             }
-        } else {
+        } else if (selectedTab == 0) {
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -112,7 +133,7 @@ fun ClientHomeScreen(
                         if (next == null) {
                             Text("No upcoming sessions scheduled.", style = MaterialTheme.typography.bodyMedium)
                         } else {
-                            Text("${next.date} at ${next.time}", style = MaterialTheme.typography.bodyLarge)
+                            Text("${next.date.toDisplayDate()} at ${next.time}", style = MaterialTheme.typography.bodyLarge)
                             if (next.notes.isNotBlank()) {
                                 Text(next.notes, style = MaterialTheme.typography.bodySmall)
                             }
@@ -121,6 +142,23 @@ fun ClientHomeScreen(
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
+
+                if (state.upcomingSessions.size > 1) {
+                    Text(
+                        text = "Upcoming sessions",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = BurgundyPrimary
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    state.upcomingSessions.drop(1).take(5).forEach { session ->
+                        Text(
+                            text = "${session.date.toDisplayDate()} at ${session.time} – ${session.title}",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
 
                 Card(
                     modifier = Modifier
@@ -196,7 +234,7 @@ fun ClientHomeScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                "Week of ${plan.weekStart} – ${plan.title}",
+                                "Week of ${plan.weekStart.toDisplayDate()} – ${plan.title}",
                                 style = MaterialTheme.typography.bodyMedium
                             )
                         }
@@ -217,7 +255,7 @@ fun ClientHomeScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                "Week of ${plan.weekStart} – ${plan.title}",
+                                "Week of ${plan.weekStart.toDisplayDate()} – ${plan.title}",
                                 style = MaterialTheme.typography.bodyMedium
                             )
                         }
@@ -256,7 +294,7 @@ fun ClientHomeScreen(
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text("${checkIn.checkInDate}", style = MaterialTheme.typography.labelLarge)
                                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            checkIn.weightKg?.let { Text("${it} kg", style = MaterialTheme.typography.bodySmall) }
+                                            checkIn.weightKg?.let { Text("${it.toInt().toPounds()} lbs", style = MaterialTheme.typography.bodySmall) }
                                             if (checkIn.workoutDone) Text("Workout ✓", style = MaterialTheme.typography.bodySmall)
                                             if (checkIn.mealsFollowed) Text("Meals ✓", style = MaterialTheme.typography.bodySmall)
                                         }
@@ -277,13 +315,6 @@ fun ClientHomeScreen(
                 }
 
                 Spacer(modifier = Modifier.weight(1f))
-                Button(
-                    onClick = onSignOut,
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = BurgundyPrimary)
-                ) {
-                    Text("Sign out")
-                }
             }
         }
     }
@@ -295,7 +326,7 @@ fun ClientHomeScreen(
             title = { Text(plan.title) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Week start: ${plan.weekStart}", style = MaterialTheme.typography.labelLarge)
+                    Text("Week start: ${plan.weekStart.toDisplayDate()}", style = MaterialTheme.typography.labelLarge)
                     Spacer(Modifier.height(8.dp))
                     Text(plan.planText, style = MaterialTheme.typography.bodyMedium)
                 }
@@ -315,7 +346,7 @@ fun ClientHomeScreen(
             title = { Text(plan.title) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Week start: ${plan.weekStart}", style = MaterialTheme.typography.labelLarge)
+                    Text("Week start: ${plan.weekStart.toDisplayDate()}", style = MaterialTheme.typography.labelLarge)
                     Spacer(Modifier.height(8.dp))
                     Text(plan.planText, style = MaterialTheme.typography.bodyMedium)
                 }

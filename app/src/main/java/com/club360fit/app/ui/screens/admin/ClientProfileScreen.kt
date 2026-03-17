@@ -51,6 +51,9 @@ import com.club360fit.app.data.ProgressCheckInDto
 import com.club360fit.app.data.ProgressRepository
 import com.club360fit.app.data.WorkoutPlanDto
 import com.club360fit.app.data.WorkoutPlanRepository
+import com.club360fit.app.data.ScheduleEvent
+import com.club360fit.app.data.ScheduleRepository
+import com.club360fit.app.ui.utils.toDisplayDate
 import com.club360fit.app.ui.theme.BurgundyPrimary
 import com.club360fit.app.ui.utils.fromFeetInches
 import com.club360fit.app.ui.utils.fromPounds
@@ -85,12 +88,23 @@ fun ClientProfileScreen(
     var mealPlans by remember { mutableStateOf<List<MealPlanDto>>(emptyList()) }
     var progressCheckIns by remember { mutableStateOf<List<ProgressCheckInDto>>(emptyList()) }
     var refreshKey by remember { mutableStateOf(0) }
+    var upcomingSessions by remember { mutableStateOf<List<ScheduleEvent>>(emptyList()) }
+    var pastSessions by remember { mutableStateOf<List<ScheduleEvent>>(emptyList()) }
 
     LaunchedEffect(state.client.id, refreshKey) {
         val id = state.client.id ?: return@LaunchedEffect
         workoutPlans = WorkoutPlanRepository.getAllPlans(id)
         mealPlans = MealPlanRepository.getAllPlans(id)
         progressCheckIns = ProgressRepository.getForClient(id)
+
+        val allSessions = ScheduleRepository.getEventsForClient(id)
+        val today = LocalDate.now()
+        upcomingSessions = allSessions
+            .filter { !it.date.isBefore(today) }
+            .sortedWith(compareBy({ it.date }, { it.time }))
+        pastSessions = allSessions
+            .filter { it.date.isBefore(today) }
+            .sortedWith(compareBy({ it.date }, { it.time }))
     }
 
     Scaffold(
@@ -142,8 +156,13 @@ fun ClientProfileScreen(
                 val c = state.client
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     c.age?.let { Text("Age: $it") }
-                    c.heightCm?.let { Text("Height: ${it} cm") }
-                    c.weightKg?.let { Text("Weight: ${it} kg") }
+                    c.heightCm?.let {
+                        val (ft, inc) = it.toFeetInches()
+                        Text("Height: ${ft}' ${inc}\"")
+                    }
+                    c.weightKg?.let {
+                        Text("Weight: ${it.toPounds()} lbs")
+                    }
                     c.goal?.takeIf { it.isNotBlank() }?.let {
                         Text("Overall goal: $it")
                     }
@@ -176,7 +195,7 @@ fun ClientProfileScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text("Week of ${plan.weekStart} – ${plan.title}", style = MaterialTheme.typography.bodyMedium)
+                                Text("Week of ${plan.weekStart.toDisplayDate()} – ${plan.title}", style = MaterialTheme.typography.bodyMedium)
                                 if (plan.planText.isNotBlank()) {
                                     Text(
                                         plan.planText.take(80) + if (plan.planText.length > 80) "…" else "",
@@ -225,7 +244,7 @@ fun ClientProfileScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text("Week of ${plan.weekStart} – ${plan.title}", style = MaterialTheme.typography.bodyMedium)
+                                Text("Week of ${plan.weekStart.toDisplayDate()} – ${plan.title}", style = MaterialTheme.typography.bodyMedium)
                                 if (plan.planText.isNotBlank()) {
                                     Text(
                                         plan.planText.take(80) + if (plan.planText.length > 80) "…" else "",
@@ -402,6 +421,44 @@ fun ClientProfileScreen(
                     checked = state.client.canViewEvents,
                     onChecked = { viewModel.updatePrivilege(events = it) }
                 )
+
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    text = "Schedule",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = BurgundyPrimary
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                if (upcomingSessions.isEmpty() && pastSessions.isEmpty()) {
+                    Text(
+                        text = "No sessions scheduled for this client yet.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    if (upcomingSessions.isNotEmpty()) {
+                        Text("Upcoming sessions", style = MaterialTheme.typography.labelLarge)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        upcomingSessions.forEach { s ->
+                            Text(
+                                text = "${s.date.toDisplayDate()} at ${s.time} – ${s.title}",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                    if (pastSessions.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("Past sessions", style = MaterialTheme.typography.labelLarge)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        pastSessions.takeLast(10).forEach { s ->
+                            Text(
+                                text = "${s.date.toDisplayDate()} at ${s.time} – ${s.title}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(24.dp))
                 Row(

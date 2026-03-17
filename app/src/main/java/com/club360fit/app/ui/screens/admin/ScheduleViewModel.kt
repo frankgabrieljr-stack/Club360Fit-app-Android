@@ -88,6 +88,13 @@ class ScheduleViewModel : ViewModel() {
         }
     }
 
+    fun addEvents(events: List<ScheduleEvent>) {
+        viewModelScope.launch {
+            events.forEach { ScheduleRepository.addEvent(it) }
+            dismissAddEventDialog()
+        }
+    }
+
     fun updateEvent(event: ScheduleEvent) {
         viewModelScope.launch {
             ScheduleRepository.updateEvent(event)

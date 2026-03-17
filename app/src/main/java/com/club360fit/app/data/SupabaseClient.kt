@@ -15,6 +15,7 @@ object SupabaseClient {
 
     private const val SUPABASE_URL = "https://mjkrokpctcieahxtxvxq.supabase.co"
     const val AVATARS_BUCKET = "avatars"
+    const val TRANSFORMATIONS_BUCKET = "transformations"
 
     val client = createSupabaseClient(
         supabaseUrl = SUPABASE_URL,

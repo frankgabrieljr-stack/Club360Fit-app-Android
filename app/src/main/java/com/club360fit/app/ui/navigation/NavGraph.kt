@@ -14,6 +14,7 @@ import com.club360fit.app.ui.screens.admin.AdminHomeScreen
 import com.club360fit.app.ui.screens.admin.ClientDetailScreen
 import com.club360fit.app.ui.screens.admin.ClientProfileScreen
 import com.club360fit.app.ui.screens.profile.UserProfileScreen
+import com.club360fit.app.ui.screens.gallery.TransformationGalleryScreen
 import io.github.jan.supabase.gotrue.auth
 import kotlinx.coroutines.launch
 
@@ -67,34 +68,20 @@ fun Club360FitNavHost(startDestination: String = Routes.WELCOME) {
         }
         composable(Routes.CLIENT_HOME) {
             ClientHomeScreen(
-                onSignOut = {
-                    scope.launch {
-                        SupabaseClient.client.auth.signOut()
-                        navController.navigate(Routes.WELCOME) {
-                            popUpTo(Routes.WELCOME) { inclusive = true }
-                        }
-                    }
-                },
-                onOpenProfile = { navController.navigate(Routes.MY_PROFILE) }
+                onOpenProfile = { navController.navigate(Routes.MY_PROFILE) },
+                onOpenGallery = { navController.navigate(Routes.TRANSFORMATION_GALLERY) }
             )
         }
         composable(Routes.ADMIN_HOME) {
             AdminHomeScreen(
-                onSignOut = {
-                    scope.launch {
-                        SupabaseClient.client.auth.signOut()
-                        navController.navigate(Routes.WELCOME) {
-                            popUpTo(Routes.WELCOME) { inclusive = true }
-                        }
-                    }
-                },
                 onOpenProfile = { navController.navigate(Routes.MY_PROFILE) },
                 onOpenClientDetails = { clientId ->
                     navController.navigate("${Routes.CLIENT_DETAIL}/$clientId")
                 },
                 onOpenClientProfile = { clientId ->
                     navController.navigate("${Routes.CLIENT_PROFILE}/${clientId ?: "new"}")
-                }
+                },
+                onOpenGallery = { navController.navigate(Routes.TRANSFORMATION_GALLERY) }
             )
         }
         composable("${Routes.CLIENT_DETAIL}/{clientId}") { backStackEntry ->
@@ -114,7 +101,20 @@ fun Club360FitNavHost(startDestination: String = Routes.WELCOME) {
         composable(Routes.MY_PROFILE) {
             UserProfileScreen(
                 onBack = { navController.popBackStack() },
-                onEditProfile = { /* TODO: navigate to edit profile screen */ navController.popBackStack() }
+                onEditProfile = { /* TODO: navigate to edit profile screen */ navController.popBackStack() },
+                onSignOut = {
+                    scope.launch {
+                        SupabaseClient.client.auth.signOut()
+                        navController.navigate(Routes.WELCOME) {
+                            popUpTo(Routes.WELCOME) { inclusive = true }
+                        }
+                    }
+                }
+            )
+        }
+        composable(Routes.TRANSFORMATION_GALLERY) {
+            TransformationGalleryScreen(
+                onBack = { navController.popBackStack() }
             )
         }
     }

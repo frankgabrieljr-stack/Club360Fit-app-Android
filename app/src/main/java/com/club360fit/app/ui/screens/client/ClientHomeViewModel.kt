@@ -21,6 +21,7 @@ data class ClientHomeUiState(
     val error: String? = null,
     val clientId: String? = null,
     val nextSession: ScheduleEvent? = null,
+    val upcomingSessions: List<ScheduleEvent> = emptyList(),
     val workoutPlan: WorkoutPlanDto? = null,
     val mealPlan: MealPlanDto? = null,
     val workoutPlans: List<WorkoutPlanDto> = emptyList(),
@@ -49,9 +50,8 @@ class ClientHomeViewModel : ViewModel() {
                         return@launch
                     }
                 
-                // Load events
-                ScheduleRepository.loadEvents()
-                val events = ScheduleRepository.eventsFlow.value
+                // Load schedule events attached to this client
+                val events = ScheduleRepository.getEventsForClient(clientId)
                 val today = LocalDate.now()
                 val upcoming = events
                     .filter { !it.date.isBefore(today) && !it.isCompleted }
@@ -68,6 +68,7 @@ class ClientHomeViewModel : ViewModel() {
                     isLoading = false,
                     clientId = clientId,
                     nextSession = next,
+                    upcomingSessions = upcoming,
                     workoutPlan = workout,
                     mealPlan = meal,
                     workoutPlans = allWorkouts,

@@ -13,4 +13,5 @@ object Routes {
     const val CLIENT_PROFILE = "client_profile"
     const val MY_PROFILE = "my_profile"
     const val RESET_PASSWORD = "reset_password"
+    const val TRANSFORMATION_GALLERY = "transformation_gallery"
 }

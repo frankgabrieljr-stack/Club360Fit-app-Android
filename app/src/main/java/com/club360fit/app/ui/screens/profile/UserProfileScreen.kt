@@ -57,6 +57,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 fun UserProfileScreen(
     onBack: () -> Unit,
     onEditProfile: () -> Unit,
+    onSignOut: () -> Unit,
     viewModel: UserProfileViewModel = viewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -232,6 +233,19 @@ fun UserProfileScreen(
                     )
                 ) {
                     Text("Edit profile")
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                Button(
+                    onClick = onSignOut,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                ) {
+                    Text("Sign out")
                 }
             }
         }

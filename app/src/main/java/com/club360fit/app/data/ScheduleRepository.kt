@@ -37,6 +37,16 @@ object ScheduleRepository {
         }.decodeList<ScheduleEvent>()
     }
 
+    /**
+     * Events for a specific client, regardless of which coach created them.
+     * Used by the client app; relies on Supabase RLS to ensure auth.uid() owns the client row.
+     */
+    suspend fun getEventsForClient(clientId: String): List<ScheduleEvent> = withContext(Dispatchers.IO) {
+        client.postgrest["schedule_events"].select {
+            filter { eq("client_id", clientId) }
+        }.decodeList<ScheduleEvent>()
+    }
+
     suspend fun addEvent(event: ScheduleEvent) = withContext(Dispatchers.IO) {
         val uid = client.auth.currentUserOrNull()?.id
             ?: throw IllegalStateException("Not signed in")

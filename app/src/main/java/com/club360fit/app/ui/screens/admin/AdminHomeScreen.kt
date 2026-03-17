@@ -12,9 +12,9 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -32,18 +32,19 @@ import com.club360fit.app.ui.utils.toPounds
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
+import com.club360fit.app.ui.utils.toDisplayDate
 import kotlin.math.ceil
 
 @Composable
 fun AdminHomeScreen(
-    onSignOut: () -> Unit,
     onOpenProfile: () -> Unit,
     onOpenClientDetails: (String) -> Unit,
     onOpenClientProfile: (String?) -> Unit,
+    onOpenGallery: () -> Unit,
     viewModel: AdminHomeViewModel = viewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
-    val tabs = listOf("Overview", "Clients", "Schedule")
+    val tabs = listOf("Overview", "Clients", "Schedule", "Gallery")
     var selectedTab by remember { mutableIntStateOf(1) } // default to Clients
 
     Scaffold(
@@ -89,13 +90,6 @@ fun AdminHomeScreen(
                             tint = BurgundyPrimary
                         )
                     }
-                    IconButton(onClick = onSignOut) {
-                        Icon(
-                            imageVector = Icons.Default.ExitToApp,
-                            contentDescription = "Sign out",
-                            tint = BurgundyPrimary
-                        )
-                    }
                 }
             }
 
@@ -113,7 +107,13 @@ fun AdminHomeScreen(
                 tabs.forEachIndexed { index, title ->
                     Tab(
                         selected = selectedTab == index,
-                        onClick = { selectedTab = index },
+                        onClick = {
+                            if (index == 3) {
+                                onOpenGallery()
+                            } else {
+                                selectedTab = index
+                            }
+                        },
                         text = { Text(title) },
                         selectedContentColor = BurgundyPrimary,
                         unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -128,12 +128,13 @@ fun AdminHomeScreen(
                     onOpenDetails = onOpenClientDetails,
                     onOpenProfile = onOpenClientProfile
                 )
-                2 -> ScheduleTab()
+                2 -> ScheduleTab(clients = state.clients)
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OverviewTab(
     clients: List<ClientDto>,
@@ -332,6 +333,7 @@ private fun OverviewStatCard(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClientsTab(
     viewModel: AdminHomeViewModel = viewModel(),
@@ -502,7 +504,9 @@ fun ClientCard(
 }
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 fun ScheduleTab(
+    clients: List<ClientDto>,
     viewModel: ScheduleViewModel = viewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -656,16 +660,10 @@ fun ScheduleTab(
     if (state.showAddEventDialog && state.addEventDate != null) {
         AddScheduleEventDialog(
             date = state.addEventDate!!,
+            clients = clients,
             onDismiss = { viewModel.dismissAddEventDialog() },
-            onSave = { title, time, notes ->
-                viewModel.addEvent(
-                    ScheduleEvent(
-                        title = title,
-                        date = state.addEventDate!!,
-                        time = time,
-                        notes = notes
-                    )
-                )
+            onSave = { events ->
+                viewModel.addEvents(events)
             }
         )
     }
@@ -707,18 +705,31 @@ private fun ScheduleEventCard(
 }
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 private fun AddScheduleEventDialog(
     date: LocalDate,
+    clients: List<ClientDto>,
     onDismiss: () -> Unit,
-    onSave: (title: String, time: String, notes: String) -> Unit
+    onSave: (events: List<ScheduleEvent>) -> Unit
 ) {
     var title by remember { mutableStateOf("") }
     var time by remember { mutableStateOf("") }
     var notes by remember { mutableStateOf("") }
+    var selectedClientName by remember { mutableStateOf("") }
+    var selectedClientId by remember { mutableStateOf<String?>(null) }
+    var repeatWeekly by remember { mutableStateOf(false) }
+    var weeksText by remember { mutableStateOf("2") }
+    var daysOfWeekSelected by remember {
+        mutableStateOf(
+            mutableMapOf<DayOfWeek, Boolean>().apply {
+                DayOfWeek.values().forEach { put(it, false) }
+            }
+        )
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("New event — ${date.month.value}/${date.dayOfMonth}/${date.year}") },
+        title = { Text("New event — ${date.toDisplayDate()}") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
@@ -742,11 +753,135 @@ private fun AddScheduleEventDialog(
                     maxLines = 2,
                     modifier = Modifier.fillMaxWidth()
                 )
+                // Client selector
+                if (clients.isNotEmpty()) {
+                    var expanded by remember { mutableStateOf(false) }
+                    ExposedDropdownMenuBox(
+                        expanded = expanded,
+                        onExpandedChange = { expanded = !expanded }
+                    ) {
+                        OutlinedTextField(
+                            value = selectedClientName,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Assign to client (optional)") },
+                            modifier = Modifier
+                                .menuAnchor()
+                                .fillMaxWidth()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }
+                        ) {
+                            clients.forEach { client ->
+                                DropdownMenuItem(
+                                    text = { Text(client.fullName ?: "(no name)") },
+                                    onClick = {
+                                        selectedClientName = client.fullName ?: "(no name)"
+                                        selectedClientId = client.id
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Simple weekly recurrence pattern
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Repeat weekly?", style = MaterialTheme.typography.bodyMedium)
+                    Switch(
+                        checked = repeatWeekly,
+                        onCheckedChange = { repeatWeekly = it },
+                        colors = SwitchDefaults.colors(checkedThumbColor = BurgundyPrimary)
+                    )
+                }
+                if (repeatWeekly) {
+                    Text(
+                        "Select days of week and number of weeks.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    val labels = listOf(
+                        DayOfWeek.SUNDAY to "S",
+                        DayOfWeek.MONDAY to "M",
+                        DayOfWeek.TUESDAY to "T",
+                        DayOfWeek.WEDNESDAY to "W",
+                        DayOfWeek.THURSDAY to "T",
+                        DayOfWeek.FRIDAY to "F",
+                        DayOfWeek.SATURDAY to "S"
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        labels.forEach { (dow, label) ->
+                            val selected = daysOfWeekSelected[dow] == true
+                            FilterChip(
+                                selected = selected,
+                                onClick = {
+                                    daysOfWeekSelected = daysOfWeekSelected.toMutableMap().apply {
+                                        this[dow] = !(this[dow] ?: false)
+                                    }
+                                },
+                                label = { Text(label) }
+                            )
+                        }
+                    }
+                    OutlinedTextField(
+                        value = weeksText,
+                        onValueChange = { weeksText = it.filter(Char::isDigit) },
+                        label = { Text("Number of weeks") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
         },
         confirmButton = {
             TextButton(onClick = {
-                if (title.isNotBlank()) onSave(title.trim(), time.trim(), notes.trim())
+                if (title.isBlank()) return@TextButton
+
+                val clientId = selectedClientId
+
+                // If repeat is off or no days selected, create a single event on the chosen date.
+                val events: List<ScheduleEvent> =
+                    if (!repeatWeekly || daysOfWeekSelected.values.none { it }) {
+                        listOf(
+                            ScheduleEvent(
+                                title = title.trim(),
+                                date = date,
+                                time = time.trim(),
+                                notes = notes.trim(),
+                                clientId = clientId
+                            )
+                        )
+                    } else {
+                        val weeks = weeksText.toIntOrNull()?.coerceAtLeast(1) ?: 1
+                        val selectedDays = daysOfWeekSelected.filterValues { it }.keys
+                        val totalDays = weeks * 7
+                        (0 until totalDays).mapNotNull { offset ->
+                            val d = date.plusDays(offset.toLong())
+                            if (d.dayOfWeek in selectedDays) {
+                                ScheduleEvent(
+                                    title = title.trim(),
+                                    date = d,
+                                    time = time.trim(),
+                                    notes = notes.trim(),
+                                    clientId = clientId
+                                )
+                            } else null
+                        }
+                    }
+
+                if (events.isNotEmpty()) {
+                    onSave(events)
+                }
             }) {
                 Text("Save", color = BurgundyPrimary)
             }
@@ -759,6 +894,6 @@ private fun AddScheduleEventDialog(
 @Composable
 fun AdminHomeScreenPreview() {
     Club360FitTheme {
-        AdminHomeScreen(onSignOut = {}, onOpenProfile = {}, onOpenClientDetails = {}, onOpenClientProfile = {})
+        AdminHomeScreen(onOpenProfile = {}, onOpenClientDetails = {}, onOpenClientProfile = {}, onOpenGallery = {})
     }
 }
