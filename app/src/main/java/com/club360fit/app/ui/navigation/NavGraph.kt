@@ -10,9 +10,17 @@ import com.club360fit.app.ui.screens.welcome.WelcomeScreen
 import com.club360fit.app.ui.screens.auth.AuthScreen
 import com.club360fit.app.ui.screens.auth.ResetPasswordScreen
 import com.club360fit.app.ui.screens.client.ClientHomeScreen
+import com.club360fit.app.ui.screens.client.MyMealsScreen
+import com.club360fit.app.ui.screens.client.MyProgressScreen
+import com.club360fit.app.ui.screens.client.MyScheduleScreen
+import com.club360fit.app.ui.screens.client.MyWorkoutsScreen
 import com.club360fit.app.ui.screens.admin.AdminHomeScreen
 import com.club360fit.app.ui.screens.admin.ClientDetailScreen
 import com.club360fit.app.ui.screens.admin.ClientProfileScreen
+import com.club360fit.app.ui.screens.admin.ClientMealsScreen
+import com.club360fit.app.ui.screens.admin.ClientProgressScreen
+import com.club360fit.app.ui.screens.admin.ClientScheduleScreen
+import com.club360fit.app.ui.screens.admin.ClientWorkoutsScreen
 import com.club360fit.app.ui.screens.profile.UserProfileScreen
 import com.club360fit.app.ui.screens.gallery.TransformationGalleryScreen
 import io.github.jan.supabase.gotrue.auth
@@ -69,8 +77,28 @@ fun Club360FitNavHost(startDestination: String = Routes.WELCOME) {
         composable(Routes.CLIENT_HOME) {
             ClientHomeScreen(
                 onOpenProfile = { navController.navigate(Routes.MY_PROFILE) },
-                onOpenGallery = { navController.navigate(Routes.TRANSFORMATION_GALLERY) }
+                onOpenGallery = { navController.navigate(Routes.TRANSFORMATION_GALLERY) },
+                onOpenWorkouts = { id -> navController.navigate("${Routes.MY_WORKOUTS}/$id") },
+                onOpenMeals = { id -> navController.navigate("${Routes.MY_MEALS}/$id") },
+                onOpenProgress = { id -> navController.navigate("${Routes.MY_PROGRESS}/$id") },
+                onOpenSchedule = { id -> navController.navigate("${Routes.MY_SCHEDULE}/$id") }
             )
+        }
+        composable("${Routes.MY_WORKOUTS}/{clientId}") { backStackEntry ->
+            val clientId = backStackEntry.arguments?.getString("clientId") ?: return@composable
+            MyWorkoutsScreen(clientId = clientId, onBack = { navController.popBackStack() })
+        }
+        composable("${Routes.MY_MEALS}/{clientId}") { backStackEntry ->
+            val clientId = backStackEntry.arguments?.getString("clientId") ?: return@composable
+            MyMealsScreen(clientId = clientId, onBack = { navController.popBackStack() })
+        }
+        composable("${Routes.MY_PROGRESS}/{clientId}") { backStackEntry ->
+            val clientId = backStackEntry.arguments?.getString("clientId") ?: return@composable
+            MyProgressScreen(clientId = clientId, onBack = { navController.popBackStack() })
+        }
+        composable("${Routes.MY_SCHEDULE}/{clientId}") { backStackEntry ->
+            val clientId = backStackEntry.arguments?.getString("clientId") ?: return@composable
+            MyScheduleScreen(clientId = clientId, onBack = { navController.popBackStack() })
         }
         composable(Routes.ADMIN_HOME) {
             AdminHomeScreen(
@@ -95,6 +123,38 @@ fun Club360FitNavHost(startDestination: String = Routes.WELCOME) {
             val clientId = backStackEntry.arguments?.getString("clientId")
             ClientProfileScreen(
                 clientId = clientId.takeUnless { it == "new" },
+                onBack = { navController.popBackStack() },
+                onOpenWorkouts = { id -> navController.navigate("${Routes.CLIENT_WORKOUTS}/$id") },
+                onOpenMeals = { id -> navController.navigate("${Routes.CLIENT_MEALS}/$id") },
+                onOpenProgress = { id -> navController.navigate("${Routes.CLIENT_PROGRESS}/$id") },
+                onOpenSchedule = { id -> navController.navigate("${Routes.CLIENT_SCHEDULE}/$id") }
+            )
+        }
+        composable("${Routes.CLIENT_WORKOUTS}/{clientId}") { backStackEntry ->
+            val clientId = backStackEntry.arguments?.getString("clientId") ?: return@composable
+            ClientWorkoutsScreen(
+                clientId = clientId,
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable("${Routes.CLIENT_MEALS}/{clientId}") { backStackEntry ->
+            val clientId = backStackEntry.arguments?.getString("clientId") ?: return@composable
+            ClientMealsScreen(
+                clientId = clientId,
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable("${Routes.CLIENT_PROGRESS}/{clientId}") { backStackEntry ->
+            val clientId = backStackEntry.arguments?.getString("clientId") ?: return@composable
+            ClientProgressScreen(
+                clientId = clientId,
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable("${Routes.CLIENT_SCHEDULE}/{clientId}") { backStackEntry ->
+            val clientId = backStackEntry.arguments?.getString("clientId") ?: return@composable
+            ClientScheduleScreen(
+                clientId = clientId,
                 onBack = { navController.popBackStack() }
             )
         }
