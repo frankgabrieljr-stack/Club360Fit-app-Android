@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.club360fit.app.data.SupabaseClient
 import com.club360fit.app.data.TransformationGalleryRepository
 import com.club360fit.app.data.TransformationImage
+import com.club360fit.app.ui.utils.SubmitResultMessages
 import io.github.jan.supabase.gotrue.auth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,7 +19,10 @@ data class TransformationGalleryUiState(
     val isLoading: Boolean = true,
     val isAdmin: Boolean = false,
     val images: List<TransformationImage> = emptyList(),
-    val error: String? = null
+    val error: String? = null,
+    /** Transient snackbar for upload/delete (cleared after shown). */
+    val snackbarMessage: String? = null,
+    val snackbarIsError: Boolean = false
 )
 
 class TransformationGalleryViewModel : ViewModel() {
@@ -63,9 +67,16 @@ class TransformationGalleryViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val img = TransformationGalleryRepository.uploadImage(bytes, name)
-                _uiState.value = _uiState.value.copy(images = _uiState.value.images + img)
+                _uiState.value = _uiState.value.copy(
+                    images = _uiState.value.images + img,
+                    snackbarMessage = SubmitResultMessages.UPLOAD_SUCCESS,
+                    snackbarIsError = false
+                )
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(error = e.message ?: "Upload failed")
+                _uiState.value = _uiState.value.copy(
+                    snackbarMessage = SubmitResultMessages.failure(e),
+                    snackbarIsError = true
+                )
             }
         }
     }
@@ -74,11 +85,22 @@ class TransformationGalleryViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 TransformationGalleryRepository.deleteImage(image.path)
-                _uiState.value = _uiState.value.copy(images = _uiState.value.images.filterNot { it.path == image.path })
+                _uiState.value = _uiState.value.copy(
+                    images = _uiState.value.images.filterNot { it.path == image.path },
+                    snackbarMessage = SubmitResultMessages.DELETE_SUCCESS,
+                    snackbarIsError = false
+                )
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(error = e.message ?: "Delete failed")
+                _uiState.value = _uiState.value.copy(
+                    snackbarMessage = SubmitResultMessages.failure(e),
+                    snackbarIsError = true
+                )
             }
         }
+    }
+
+    fun clearSnackbar() {
+        _uiState.value = _uiState.value.copy(snackbarMessage = null, snackbarIsError = false)
     }
 }
 

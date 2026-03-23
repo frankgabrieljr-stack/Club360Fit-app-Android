@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import com.club360fit.app.data.ProgressCheckInDto
 import com.club360fit.app.data.ProgressRepository
 import com.club360fit.app.ui.theme.BurgundyPrimary
+import com.club360fit.app.ui.utils.SubmitResultMessages
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
@@ -33,7 +34,8 @@ import java.time.LocalDate
 fun ClientLogProgressDialog(
     clientId: String,
     onDismiss: () -> Unit,
-    onSaved: () -> Unit
+    onSaved: () -> Unit,
+    onSubmitResult: (success: Boolean, message: String) -> Unit = { _, _ -> }
 ) {
     var dateText by remember { mutableStateOf(LocalDate.now().toString()) }
     var weightText by remember { mutableStateOf("") }
@@ -121,11 +123,14 @@ fun ClientLogProgressDialog(
                                 )
                             )
                             isSaving = false
+                            onSubmitResult(true, SubmitResultMessages.SAVED_SUCCESS)
                             onSaved()
                             onDismiss()
                         } catch (e: Exception) {
                             isSaving = false
-                            error = e.message ?: "Failed to save"
+                            val msg = e.message ?: "Failed to save"
+                            error = msg
+                            onSubmitResult(false, SubmitResultMessages.failure(e))
                         }
                     }
                 }

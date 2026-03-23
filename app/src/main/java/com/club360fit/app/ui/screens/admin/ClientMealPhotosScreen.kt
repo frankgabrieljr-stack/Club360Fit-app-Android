@@ -49,6 +49,7 @@ import coil.request.ImageRequest
 import com.club360fit.app.data.MealPhotoLogDto
 import com.club360fit.app.data.MealPhotoRepository
 import com.club360fit.app.ui.theme.BurgundyPrimary
+import com.club360fit.app.ui.utils.SubmitResultMessages
 import com.club360fit.app.ui.utils.toDisplayDate
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -165,11 +166,19 @@ fun ClientMealPhotosScreen(
                         ClientMealPhotoCard(
                             clientId = clientId,
                             item = item,
-                            onSaved = { reload() },
+                            onSaved = {
+                                reload()
+                                scope.launch {
+                                    snackbarHostState.showSnackbar(
+                                        SubmitResultMessages.SAVED_SUCCESS,
+                                        duration = SnackbarDuration.Short
+                                    )
+                                }
+                            },
                             onError = { msg ->
                                 scope.launch {
                                     snackbarHostState.showSnackbar(
-                                        msg,
+                                        SubmitResultMessages.failure(msg),
                                         duration = SnackbarDuration.Long
                                     )
                                 }

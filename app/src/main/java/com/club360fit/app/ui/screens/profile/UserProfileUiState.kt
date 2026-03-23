@@ -9,7 +9,9 @@ data class UserProfileUiState(
     val isUploadingAvatar: Boolean = false,
     val roleLabel: String = "Client",
     val isLoading: Boolean = true,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    /** Shown once as a snackbar after a successful avatar upload. */
+    val uploadSuccessMessage: String? = null
 ) {
     val displayName: String get() = when {
         firstName.isNotBlank() || lastName.isNotBlank() ->

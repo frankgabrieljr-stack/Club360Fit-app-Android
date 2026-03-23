@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.club360fit.app.data.SupabaseClient
+import com.club360fit.app.ui.utils.SubmitResultMessages
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.Dispatchers
@@ -126,6 +127,10 @@ class UserProfileViewModel : ViewModel() {
                 }
 
                 loadProfile()
+                _state.value = _state.value.copy(
+                    isUploadingAvatar = false,
+                    uploadSuccessMessage = SubmitResultMessages.UPLOAD_SUCCESS
+                )
             } catch (e: Exception) {
                 _state.value = _state.value.copy(
                     isUploadingAvatar = false,
@@ -133,5 +138,9 @@ class UserProfileViewModel : ViewModel() {
                 )
             }
         }
+    }
+
+    fun clearUploadSuccessMessage() {
+        _state.value = _state.value.copy(uploadSuccessMessage = null)
     }
 }

@@ -62,6 +62,7 @@ import com.club360fit.app.data.PaymentSettingsRepository
 import com.club360fit.app.data.formatPaymentInstant
 import com.club360fit.app.ui.theme.BurgundyPrimary
 import com.club360fit.app.ui.utils.qrCodeImageBitmap
+import com.club360fit.app.ui.utils.SubmitResultMessages
 import com.club360fit.app.ui.utils.toDisplayDate
 import kotlinx.coroutines.launch
 
@@ -420,12 +421,12 @@ fun MyPaymentsScreen(
                                 showConfirmDialog = false
                                 reloadPayments()
                                 snackbarHostState.showSnackbar(
-                                    "Sent",
+                                    SubmitResultMessages.SUBMITTED_SUCCESS,
                                     duration = SnackbarDuration.Short
                                 )
                             } catch (e: Exception) {
                                 snackbarHostState.showSnackbar(
-                                    e.message ?: "Could not send confirmation",
+                                    SubmitResultMessages.failure(e),
                                     duration = SnackbarDuration.Long
                                 )
                             } finally {

@@ -98,20 +98,20 @@ class ClientProfileViewModel(
         _uiState.value = _uiState.value.copy(isAdmin = isAdmin)
     }
 
-    fun save(onDone: () -> Unit) {
+    fun save(onSuccess: () -> Unit, onError: ((String) -> Unit)? = null) {
         val state = _uiState.value
         val dto = state.client
-        
+
         viewModelScope.launch {
             try {
                 ClientRepository.upsertClient(dto)
                 // Note: role management should be done via Supabase Dashboard for now
                 // to avoid the admin user accidentally changing their own role.
-                onDone()
+                onSuccess()
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    error = e.message ?: "Save failed"
-                )
+                val msg = e.message ?: "Save failed"
+                _uiState.value = _uiState.value.copy(error = msg)
+                onError?.invoke(msg)
             }
         }
     }

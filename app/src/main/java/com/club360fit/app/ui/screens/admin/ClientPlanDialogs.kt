@@ -33,6 +33,7 @@ import com.club360fit.app.data.ProgressRepository
 import com.club360fit.app.data.WorkoutPlanDto
 import com.club360fit.app.data.WorkoutPlanRepository
 import com.club360fit.app.ui.theme.BurgundyPrimary
+import com.club360fit.app.ui.utils.SubmitResultMessages
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
@@ -44,7 +45,8 @@ fun EditPlanDialog(
     editingPlanId: String?,
     isWorkout: Boolean,
     onDismiss: () -> Unit,
-    onSaved: () -> Unit = {}
+    onSaved: () -> Unit = {},
+    onSubmitResult: (success: Boolean, message: String) -> Unit = { _, _ -> }
 ) {
     var weekStartText by remember { mutableStateOf(LocalDate.now().toString()) }
     var planTitle by remember { mutableStateOf("") }
@@ -154,11 +156,14 @@ fun EditPlanDialog(
                                 )
                             }
                             isSaving = false
+                            onSubmitResult(true, SubmitResultMessages.SAVED_SUCCESS)
                             onSaved()
                             onDismiss()
                         } catch (e: Exception) {
                             isSaving = false
-                            error = e.message ?: "Failed to save plan"
+                            val msg = e.message ?: "Failed to save plan"
+                            error = msg
+                            onSubmitResult(false, SubmitResultMessages.failure(e))
                         }
                     }
                 }
@@ -175,7 +180,8 @@ fun EditPlanDialog(
 fun AddProgressCheckInDialog(
     clientId: String,
     onDismiss: () -> Unit,
-    onSaved: () -> Unit
+    onSaved: () -> Unit,
+    onSubmitResult: (success: Boolean, message: String) -> Unit = { _, _ -> }
 ) {
     var dateText by remember { mutableStateOf(LocalDate.now().toString()) }
     var weightText by remember { mutableStateOf("") }
@@ -265,11 +271,14 @@ fun AddProgressCheckInDialog(
                                 )
                             )
                             isSaving = false
+                            onSubmitResult(true, SubmitResultMessages.SAVED_SUCCESS)
                             onSaved()
                             onDismiss()
                         } catch (e: Exception) {
                             isSaving = false
-                            error = e.message ?: "Failed to save"
+                            val msg = e.message ?: "Failed to save"
+                            error = msg
+                            onSubmitResult(false, SubmitResultMessages.failure(e))
                         }
                     }
                 }

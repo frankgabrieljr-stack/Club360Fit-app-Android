@@ -26,6 +26,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -54,6 +55,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.club360fit.app.data.TransformationImage
 import com.club360fit.app.ui.theme.BurgundyPrimary
+import com.club360fit.app.ui.utils.SubmitResultMessages
 import com.club360fit.app.ui.utils.readBytesFromUri
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -82,8 +84,20 @@ fun TransformationGalleryScreen(
 
     if (state.error != null) {
         LaunchedEffect(state.error) {
-            state.error?.let { snackbarHostState.showSnackbar(it) }
+            state.error?.let {
+                snackbarHostState.showSnackbar(it, duration = SnackbarDuration.Long)
+            }
         }
+    }
+
+    LaunchedEffect(state.snackbarMessage) {
+        val msg = state.snackbarMessage ?: return@LaunchedEffect
+        val isErr = state.snackbarIsError
+        viewModel.clearSnackbar()
+        snackbarHostState.showSnackbar(
+            msg,
+            duration = if (isErr) SnackbarDuration.Long else SnackbarDuration.Short
+        )
     }
 
     val pickerLauncher = rememberLauncherForActivityResult(
@@ -95,7 +109,10 @@ fun TransformationGalleryScreen(
                 if (bytes != null) {
                     viewModel.addImage(bytes, "photo.jpg")
                 } else {
-                    snackbarHostState.showSnackbar("Unable to read image")
+                    snackbarHostState.showSnackbar(
+                        SubmitResultMessages.IMAGE_READ_FAILED,
+                        duration = SnackbarDuration.Long
+                    )
                 }
             }
         }

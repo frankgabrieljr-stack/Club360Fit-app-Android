@@ -22,6 +22,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -40,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import com.club360fit.app.data.DailyHabitLogDto
 import com.club360fit.app.data.DailyHabitRepository
 import com.club360fit.app.ui.theme.BurgundyPrimary
+import com.club360fit.app.ui.utils.SubmitResultMessages
 import com.club360fit.app.ui.utils.toDisplayDate
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -51,6 +55,7 @@ fun MyDailyHabitsScreen(
     onBack: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
     val today = LocalDate.now()
     var waterDone by remember { mutableStateOf(false) }
     var stepsText by remember { mutableStateOf("") }
@@ -75,6 +80,7 @@ fun MyDailyHabitsScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Daily habits") },
@@ -162,8 +168,17 @@ fun MyDailyHabitsScreen(
                                         sleepHours = sleep
                                     )
                                 )
+                                snackbarHostState.showSnackbar(
+                                    SubmitResultMessages.SAVED_SUCCESS,
+                                    duration = SnackbarDuration.Short
+                                )
                             } catch (e: Exception) {
-                                error = e.message
+                                val msg = SubmitResultMessages.failure(e)
+                                error = msg
+                                snackbarHostState.showSnackbar(
+                                    msg,
+                                    duration = SnackbarDuration.Long
+                                )
                             } finally {
                                 isSaving = false
                             }

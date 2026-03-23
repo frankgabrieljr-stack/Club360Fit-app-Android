@@ -32,6 +32,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -69,7 +72,9 @@ import com.club360fit.app.ui.theme.BurgundyPrimary
 import com.club360fit.app.ui.utils.fromFeetInches
 import com.club360fit.app.ui.utils.fromPounds
 import com.club360fit.app.ui.utils.toFeetInches
+import com.club360fit.app.ui.utils.SubmitResultMessages
 import com.club360fit.app.ui.utils.toPounds
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
@@ -93,6 +98,8 @@ fun ClientProfileScreen(
     val viewModel: ClientProfileViewModel = viewModel(factory = factory)
     val state by viewModel.uiState.collectAsState()
     val scrollState = rememberScrollState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
     
     var workoutPlans by remember { mutableStateOf<List<WorkoutPlanDto>>(emptyList()) }
     var mealPlans by remember { mutableStateOf<List<MealPlanDto>>(emptyList()) }
@@ -125,6 +132,7 @@ fun ClientProfileScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
@@ -423,7 +431,28 @@ fun ClientProfileScreen(
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = BurgundyPrimary)
                     ) { Text("Cancel") }
                     Button(
-                        onClick = { viewModel.save(onDone = onBack) },
+                        onClick = {
+                            viewModel.save(
+                                onSuccess = {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            SubmitResultMessages.SAVED_SUCCESS,
+                                            duration = SnackbarDuration.Short
+                                        )
+                                        delay(450)
+                                        onBack()
+                                    }
+                                },
+                                onError = { msg ->
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            SubmitResultMessages.failure(msg),
+                                            duration = SnackbarDuration.Long
+                                        )
+                                    }
+                                }
+                            )
+                        },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = BurgundyPrimary,

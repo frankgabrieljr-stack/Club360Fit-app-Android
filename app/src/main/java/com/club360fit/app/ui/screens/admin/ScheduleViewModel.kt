@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.club360fit.app.data.ScheduleEvent
 import com.club360fit.app.data.ScheduleRepository
+import com.club360fit.app.ui.utils.SubmitResultMessages
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -33,6 +34,11 @@ class ScheduleViewModel : ViewModel() {
     private val _selectedDate = MutableStateFlow<LocalDate?>(null)
     private val _showAddEventDialog = MutableStateFlow(false)
     private val _addEventDate = MutableStateFlow<LocalDate?>(null)
+
+    private val _snackbarMessage = MutableStateFlow<String?>(null)
+    private val _snackbarIsError = MutableStateFlow(false)
+    val snackbarMessage: StateFlow<String?> = _snackbarMessage.asStateFlow()
+    val snackbarIsError: StateFlow<Boolean> = _snackbarIsError.asStateFlow()
 
     val eventsFlow: StateFlow<List<ScheduleEvent>> = ScheduleRepository.eventsFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -89,31 +95,68 @@ class ScheduleViewModel : ViewModel() {
 
     fun addEvent(event: ScheduleEvent) {
         viewModelScope.launch {
-            ScheduleRepository.addEvent(event)
-            dismissAddEventDialog()
+            try {
+                ScheduleRepository.addEvent(event)
+                dismissAddEventDialog()
+                showSnackbar(SubmitResultMessages.SAVED_SUCCESS, isError = false)
+            } catch (e: Exception) {
+                showSnackbar(SubmitResultMessages.failure(e), isError = true)
+            }
         }
     }
 
     fun addEvents(events: List<ScheduleEvent>) {
         viewModelScope.launch {
-            events.forEach { ScheduleRepository.addEvent(it) }
-            dismissAddEventDialog()
+            try {
+                events.forEach { ScheduleRepository.addEvent(it) }
+                dismissAddEventDialog()
+                showSnackbar(SubmitResultMessages.SAVED_SUCCESS, isError = false)
+            } catch (e: Exception) {
+                showSnackbar(SubmitResultMessages.failure(e), isError = true)
+            }
         }
     }
 
     fun updateEvent(event: ScheduleEvent) {
         viewModelScope.launch {
-            ScheduleRepository.updateEvent(event)
+            try {
+                ScheduleRepository.updateEvent(event)
+                showSnackbar(SubmitResultMessages.SAVED_SUCCESS, isError = false)
+            } catch (e: Exception) {
+                showSnackbar(SubmitResultMessages.failure(e), isError = true)
+            }
         }
     }
 
     fun deleteEvent(id: String) {
         viewModelScope.launch {
-            ScheduleRepository.deleteEvent(id)
+            try {
+                ScheduleRepository.deleteEvent(id)
+                showSnackbar(SubmitResultMessages.DELETE_SUCCESS, isError = false)
+            } catch (e: Exception) {
+                showSnackbar(SubmitResultMessages.failure(e), isError = true)
+            }
         }
     }
 
     fun markCompleted(event: ScheduleEvent) {
-        updateEvent(event.copy(isCompleted = true))
+        viewModelScope.launch {
+            try {
+                ScheduleRepository.updateEvent(event.copy(isCompleted = true))
+                showSnackbar(SubmitResultMessages.MARKED_COMPLETE_SUCCESS, isError = false)
+            } catch (e: Exception) {
+                showSnackbar(SubmitResultMessages.failure(e), isError = true)
+            }
+        }
+    }
+
+    private fun showSnackbar(message: String, isError: Boolean) {
+        _snackbarMessage.value = message
+        _snackbarIsError.value = isError
+    }
+
+    fun clearScheduleSnackbar() {
+        _snackbarMessage.value = null
+        _snackbarIsError.value = false
     }
 }

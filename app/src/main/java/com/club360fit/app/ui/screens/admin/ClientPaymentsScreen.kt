@@ -55,6 +55,7 @@ import com.club360fit.app.data.PaymentRecordRepository
 import com.club360fit.app.data.PaymentSettingsRepository
 import com.club360fit.app.data.formatPaymentInstant
 import com.club360fit.app.ui.theme.BurgundyPrimary
+import com.club360fit.app.ui.utils.SubmitResultMessages
 import com.club360fit.app.ui.utils.toDisplayDate
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -254,11 +255,11 @@ fun ClientPaymentsScreen(
                                     )
                                 )
                                 snackbarHostState.showSnackbar(
-                                    "Saved",
+                                    SubmitResultMessages.SAVED_SUCCESS,
                                     duration = SnackbarDuration.Short
                                 )
                             } catch (e: Exception) {
-                                val msg = e.message ?: "Save failed"
+                                val msg = SubmitResultMessages.failure(e)
                                 error = msg
                                 snackbarHostState.showSnackbar(
                                     msg,
@@ -331,10 +332,10 @@ fun ClientPaymentsScreen(
                                                 try {
                                                     PaymentConfirmationRepository.approve(cid, clientId)
                                                     loadAll()
-                                                    snackbarHostState.showSnackbar("Added")
+                                                    snackbarHostState.showSnackbar(SubmitResultMessages.APPROVED_SUCCESS)
                                                 } catch (e: Exception) {
                                                     snackbarHostState.showSnackbar(
-                                                        e.message ?: "Could not approve",
+                                                        SubmitResultMessages.failure(e),
                                                         duration = SnackbarDuration.Long
                                                     )
                                                 } finally {
@@ -362,10 +363,10 @@ fun ClientPaymentsScreen(
                                                 try {
                                                     PaymentConfirmationRepository.decline(cid, clientId)
                                                     loadAll()
-                                                    snackbarHostState.showSnackbar("Declined")
+                                                    snackbarHostState.showSnackbar(SubmitResultMessages.DECLINED_SUCCESS)
                                                 } catch (e: Exception) {
                                                     snackbarHostState.showSnackbar(
-                                                        e.message ?: "Could not decline",
+                                                        SubmitResultMessages.failure(e),
                                                         duration = SnackbarDuration.Long
                                                     )
                                                 } finally {
@@ -525,10 +526,10 @@ fun ClientPaymentsScreen(
                                 )
                                 records = PaymentRecordRepository.listForClient(clientId)
                                 showLogDialog = false
-                                snackbarHostState.showSnackbar("Logged")
+                                snackbarHostState.showSnackbar(SubmitResultMessages.LOGGED_SUCCESS)
                             } catch (e: Exception) {
                                 snackbarHostState.showSnackbar(
-                                    e.message ?: "Could not log payment",
+                                    SubmitResultMessages.failure(e),
                                     duration = SnackbarDuration.Long
                                 )
                             } finally {

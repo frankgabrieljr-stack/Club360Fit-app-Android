@@ -21,6 +21,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -30,6 +33,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,6 +43,7 @@ import com.club360fit.app.data.ProgressRepository
 import com.club360fit.app.ui.theme.BurgundyPrimary
 import com.club360fit.app.ui.utils.toDisplayDate
 import com.club360fit.app.ui.utils.toPounds
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,6 +56,8 @@ fun MyProgressScreen(
     var checkIns by remember { mutableStateOf<List<ProgressCheckInDto>>(emptyList()) }
     var refreshKey by remember { mutableIntStateOf(0) }
     var showLogDialog by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(clientId, refreshKey) {
         isLoading = true
@@ -65,6 +72,7 @@ fun MyProgressScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("My Progress") },
@@ -152,6 +160,14 @@ fun MyProgressScreen(
             onSaved = {
                 showLogDialog = false
                 refreshKey++
+            },
+            onSubmitResult = { success, message ->
+                scope.launch {
+                    snackbarHostState.showSnackbar(
+                        message,
+                        duration = if (success) SnackbarDuration.Short else SnackbarDuration.Long
+                    )
+                }
             }
         )
     }

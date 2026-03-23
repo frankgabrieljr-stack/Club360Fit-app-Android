@@ -573,6 +573,20 @@ fun ScheduleTab(
     viewModel: ScheduleViewModel = viewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
+    val scheduleSnackbar by viewModel.snackbarMessage.collectAsState()
+    val scheduleSnackbarIsError by viewModel.snackbarIsError.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(scheduleSnackbar) {
+        val msg = scheduleSnackbar ?: return@LaunchedEffect
+        val isErr = scheduleSnackbarIsError
+        viewModel.clearScheduleSnackbar()
+        snackbarHostState.showSnackbar(
+            msg,
+            duration = if (isErr) SnackbarDuration.Long else SnackbarDuration.Short
+        )
+    }
+
     val month = state.currentMonth
     val startOfMonth = month.atDay(1)
     val daysInMonth = month.lengthOfMonth()
@@ -582,6 +596,7 @@ fun ScheduleTab(
     val totalCells = firstDayOfWeekIndex + daysInMonth
     val rows = ceil(totalCells / 7f).toInt()
 
+    Box(modifier = Modifier.fillMaxSize()) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -718,6 +733,13 @@ fun ScheduleTab(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+    }
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(16.dp)
+        )
     }
 
     if (state.showAddEventDialog && state.addEventDate != null) {

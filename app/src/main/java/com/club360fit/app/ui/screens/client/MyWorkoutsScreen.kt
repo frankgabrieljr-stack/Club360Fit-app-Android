@@ -21,6 +21,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -39,6 +42,7 @@ import com.club360fit.app.data.WorkoutPlanDto
 import com.club360fit.app.data.WorkoutPlanRepository
 import com.club360fit.app.data.WorkoutSessionLogRepository
 import com.club360fit.app.ui.theme.BurgundyPrimary
+import com.club360fit.app.ui.utils.SubmitResultMessages
 import com.club360fit.app.ui.utils.toDisplayDate
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -50,6 +54,7 @@ fun MyWorkoutsScreen(
     onBack: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     var plans by remember { mutableStateOf<List<WorkoutPlanDto>>(emptyList()) }
@@ -83,6 +88,7 @@ fun MyWorkoutsScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("My Workouts") },
@@ -137,6 +143,15 @@ fun MyWorkoutsScreen(
                             try {
                                 WorkoutSessionLogRepository.logSession(clientId, today)
                                 refreshWeek()
+                                snackbarHostState.showSnackbar(
+                                    SubmitResultMessages.LOGGED_SUCCESS,
+                                    duration = SnackbarDuration.Short
+                                )
+                            } catch (e: Exception) {
+                                snackbarHostState.showSnackbar(
+                                    SubmitResultMessages.failure(e),
+                                    duration = SnackbarDuration.Long
+                                )
                             } finally {
                                 isLogging = false
                             }

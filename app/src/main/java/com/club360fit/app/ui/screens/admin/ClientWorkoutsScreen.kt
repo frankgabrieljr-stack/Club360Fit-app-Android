@@ -20,6 +20,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -29,6 +32,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -38,6 +42,7 @@ import com.club360fit.app.data.WorkoutPlanDto
 import com.club360fit.app.data.WorkoutPlanRepository
 import com.club360fit.app.ui.theme.BurgundyPrimary
 import com.club360fit.app.ui.utils.toDisplayDate
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,6 +56,8 @@ fun ClientWorkoutsScreen(
     var showEditDialog by remember { mutableStateOf(false) }
     var editingId by remember { mutableStateOf<String?>(null) }
     var refreshKey by remember { mutableIntStateOf(0) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(clientId, refreshKey) {
         isLoading = true
@@ -65,6 +72,7 @@ fun ClientWorkoutsScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Workout Plans") },
@@ -154,10 +162,18 @@ fun ClientWorkoutsScreen(
                 showEditDialog = false
                 editingId = null
             },
-            onSaved = { 
+            onSaved = {
                 showEditDialog = false
                 editingId = null
                 refreshKey++
+            },
+            onSubmitResult = { success, message ->
+                scope.launch {
+                    snackbarHostState.showSnackbar(
+                        message,
+                        duration = if (success) SnackbarDuration.Short else SnackbarDuration.Long
+                    )
+                }
             }
         )
     }

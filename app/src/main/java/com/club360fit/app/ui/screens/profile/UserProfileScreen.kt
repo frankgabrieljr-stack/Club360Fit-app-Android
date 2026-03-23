@@ -33,12 +33,17 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -49,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.club360fit.app.ui.theme.BurgundyPrimary
+import com.club360fit.app.ui.utils.SubmitResultMessages
 import com.club360fit.app.ui.theme.OnBurgundy
 import androidx.lifecycle.viewmodel.compose.viewModel
 
@@ -61,7 +67,24 @@ fun UserProfileScreen(
     viewModel: UserProfileViewModel = viewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
+
+    LaunchedEffect(state.uploadSuccessMessage) {
+        state.uploadSuccessMessage?.let {
+            snackbarHostState.showSnackbar(it, duration = SnackbarDuration.Short)
+            viewModel.clearUploadSuccessMessage()
+        }
+    }
+
+    LaunchedEffect(state.errorMessage) {
+        state.errorMessage?.let { msg ->
+            snackbarHostState.showSnackbar(
+                SubmitResultMessages.failure(msg),
+                duration = SnackbarDuration.Long
+            )
+        }
+    }
     val pickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri: Uri? ->
@@ -69,6 +92,7 @@ fun UserProfileScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("My Profile") },
