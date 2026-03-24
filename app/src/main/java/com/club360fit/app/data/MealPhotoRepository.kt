@@ -87,6 +87,14 @@ object MealPhotoRepository {
                         eq("client_id", clientId)
                     }
                 }
+                ClientNotificationRepository.tryInsert(
+                    ClientNotificationDto(
+                        clientId = clientId,
+                        kind = "meal_feedback",
+                        title = "Coach feedback on your meal photo",
+                        body = trimmed.take(500),
+                    )
+                )
             }
         }
 
