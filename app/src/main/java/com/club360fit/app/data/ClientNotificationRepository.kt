@@ -45,6 +45,13 @@ object ClientNotificationRepository {
         }
     }
 
+    /** Permanently removes a row (RLS applies). Requires migration `019_client_notifications_delete_policies`. */
+    suspend fun delete(notificationId: String) = withContext(Dispatchers.IO) {
+        client.postgrest["client_notifications"].delete {
+            filter { eq("id", notificationId) }
+        }
+    }
+
     /** Inserts; ignores duplicate dedupe_key (unique violation). */
     suspend fun tryInsert(row: ClientNotificationDto) = withContext(Dispatchers.IO) {
         try {
