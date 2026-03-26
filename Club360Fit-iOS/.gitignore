@@ -1,0 +1,15 @@
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+*.xcscmblueprint
+xcuserdata/
+
+# Optional: uncomment if you move secrets to an untracked override file
+# AppConfig.local.swift
+
+# CocoaPods / SPM checkouts (if any)
+.swiftpm/
+
+# macOS
+.DS_Store
