@@ -23,9 +23,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -100,7 +98,9 @@ fun AuthScreen(
                     focusedTextColor = MaterialTheme.colorScheme.onSurface
                 )
             )
+
             Spacer(modifier = Modifier.height(12.dp))
+
             OutlinedTextField(
                 value = state.password,
                 onValueChange = viewModel::updatePassword,
@@ -123,6 +123,7 @@ fun AuthScreen(
                     cursorColor = BurgundyPrimary
                 )
             )
+
             if (isSignIn) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Button(
@@ -135,6 +136,7 @@ fun AuthScreen(
                 ) {
                     Text("Forgot password?")
                 }
+
                 if (state.resetEmailSent) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text("Check your email for a reset link.", color = MaterialTheme.colorScheme.primary)
@@ -153,16 +155,17 @@ fun AuthScreen(
                     color = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.height(8.dp))
+
                 OutlinedTextField(value = state.name, onValueChange = viewModel::updateName, label = { Text("Name") }, modifier = Modifier.fillMaxWidth(), singleLine = true, colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BurgundyPrimary, focusedLabelColor = BurgundyPrimary, cursorColor = BurgundyPrimary))
                 Spacer(modifier = Modifier.height(12.dp))
-                
+
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedTextField(
-                        value = state.age, 
-                        onValueChange = viewModel::updateAge, 
-                        label = { Text("Age") }, 
-                        modifier = Modifier.weight(1f), 
-                        singleLine = true, 
+                        value = state.age,
+                        onValueChange = viewModel::updateAge,
+                        label = { Text("Age") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BurgundyPrimary, focusedLabelColor = BurgundyPrimary, cursorColor = BurgundyPrimary)
                     )
 
@@ -185,6 +188,7 @@ fun AuthScreen(
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BurgundyPrimary, focusedLabelColor = BurgundyPrimary, cursorColor = BurgundyPrimary)
                     )
+
                     OutlinedTextField(
                         value = inchesText,
                         onValueChange = {
@@ -199,17 +203,15 @@ fun AuthScreen(
                         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BurgundyPrimary, focusedLabelColor = BurgundyPrimary, cursorColor = BurgundyPrimary)
                     )
                 }
-                
+
                 Spacer(modifier = Modifier.height(12.dp))
-                
+
                 // Imperial Weight
                 val weightKg = state.weight.toIntOrNull() ?: 0
-                var weightLbsText by remember(weightKg) {
-                    mutableStateOf(if (weightKg > 0) weightKg.toPounds().toString() else "")
-                }
-                
+                var weightLbsText by remember(weightKg) { mutableStateOf(if (weightKg > 0) weightKg.toPounds().toString() else "") }
+
                 OutlinedTextField(
-                    value = weightLbsText, 
+                    value = weightLbsText,
                     onValueChange = {
                         weightLbsText = it.filter(Char::isDigit)
                         val lbs = weightLbsText.toIntOrNull()
@@ -218,41 +220,41 @@ fun AuthScreen(
                         } else {
                             viewModel.updateWeight("")
                         }
-                    }, 
-                    label = { Text("Weight (lbs)") }, 
-                    modifier = Modifier.fillMaxWidth(), 
-                    singleLine = true, 
+                    },
+                    label = { Text("Weight (lbs)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BurgundyPrimary, focusedLabelColor = BurgundyPrimary, cursorColor = BurgundyPrimary)
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
+
                 OutlinedTextField(value = state.phone, onValueChange = viewModel::updatePhone, label = { Text("Phone #") }, modifier = Modifier.fillMaxWidth(), singleLine = true, colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BurgundyPrimary, focusedLabelColor = BurgundyPrimary, cursorColor = BurgundyPrimary))
                 Spacer(modifier = Modifier.height(12.dp))
+
                 OutlinedTextField(value = state.medicalConditions, onValueChange = viewModel::updateMedicalConditions, label = { Text("Medical conditions") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BurgundyPrimary, focusedLabelColor = BurgundyPrimary, cursorColor = BurgundyPrimary))
                 Spacer(modifier = Modifier.height(12.dp))
+
                 OutlinedTextField(value = state.foodRestrictions, onValueChange = viewModel::updateFoodRestrictions, label = { Text("Food restrictions") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BurgundyPrimary, focusedLabelColor = BurgundyPrimary, cursorColor = BurgundyPrimary))
                 Spacer(modifier = Modifier.height(12.dp))
+
                 OutlinedTextField(value = state.mealsPerDay, onValueChange = viewModel::updateMealsPerDay, label = { Text("How many meals per day?") }, modifier = Modifier.fillMaxWidth(), singleLine = true, colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BurgundyPrimary, focusedLabelColor = BurgundyPrimary, cursorColor = BurgundyPrimary))
                 Spacer(modifier = Modifier.height(12.dp))
+
                 OutlinedTextField(value = state.workoutFrequency, onValueChange = viewModel::updateWorkoutFrequency, label = { Text("How often do you workout?") }, modifier = Modifier.fillMaxWidth(), singleLine = true, colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BurgundyPrimary, focusedLabelColor = BurgundyPrimary, cursorColor = BurgundyPrimary))
                 Spacer(modifier = Modifier.height(12.dp))
+
                 OutlinedTextField(value = state.overallGoal, onValueChange = viewModel::updateOverallGoal, label = { Text("What's your overall goal?") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BurgundyPrimary, focusedLabelColor = BurgundyPrimary, cursorColor = BurgundyPrimary))
                 Spacer(modifier = Modifier.height(12.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("I am an admin", color = MaterialTheme.colorScheme.onSurface)
-                    Switch(checked = state.isAdmin, onCheckedChange = viewModel::updateIsAdmin, colors = androidx.compose.material3.SwitchDefaults.colors(checkedThumbColor = White, checkedTrackColor = BurgundyPrimary))
-                }
             }
 
             state.errorMessage?.let { msg ->
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(msg, color = MaterialTheme.colorScheme.error)
             }
+
             Spacer(modifier = Modifier.height(24.dp))
+
             Button(
                 onClick = { viewModel.submit(isSignIn) { onAuthSuccess(it) } },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -265,12 +267,14 @@ fun AuthScreen(
                     Text(if (isSignIn) "Sign in" else "Create account")
                 }
             }
+
             if (isSignIn && onNavigateToCreateAccount != null) {
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(onClick = onNavigateToCreateAccount, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surface, contentColor = BurgundyPrimary)) {
                     Text("Create account instead")
                 }
             }
+
             if (!isSignIn && onNavigateToSignIn != null) {
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(onClick = onNavigateToSignIn, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surface, contentColor = BurgundyPrimary)) {
