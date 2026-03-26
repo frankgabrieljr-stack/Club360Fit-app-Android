@@ -41,8 +41,8 @@ import androidx.compose.ui.unit.dp
 import com.club360fit.app.data.ProgressCheckInDto
 import com.club360fit.app.data.ProgressRepository
 import com.club360fit.app.ui.theme.BurgundyPrimary
+import com.club360fit.app.ui.utils.formatWeightLbsFromKg
 import com.club360fit.app.ui.utils.toDisplayDate
-import com.club360fit.app.ui.utils.toPounds
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -123,7 +123,9 @@ fun MyProgressScreen(
                             )
                             Spacer(Modifier.height(4.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                checkIn.weightKg?.let { Text("${it.toInt().toPounds()} lbs", style = MaterialTheme.typography.bodySmall) }
+                                formatWeightLbsFromKg(checkIn.weightKg)?.let {
+                                    Text(it, style = MaterialTheme.typography.bodySmall)
+                                }
                                 if (checkIn.workoutDone) Text("Workout ✓", style = MaterialTheme.typography.bodySmall)
                                 if (checkIn.mealsFollowed) Text("Meals ✓", style = MaterialTheme.typography.bodySmall)
                             }

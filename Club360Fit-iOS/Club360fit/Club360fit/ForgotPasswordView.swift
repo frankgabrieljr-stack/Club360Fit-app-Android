@@ -12,18 +12,20 @@ struct ForgotPasswordView: View {
         Form {
             Section {
                 TextField("Email", text: $email)
+                    .foregroundStyle(Club360Theme.cardTitle)
                     .textContentType(.emailAddress)
                     .keyboardType(.emailAddress)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
             } footer: {
-                Text("We’ll email you a link to reset your password. Add the URL scheme **club360fit** in Xcode (URL Types) so the link can open this app, or use the link from any browser.")
+                Text("We’ll email you a link to reset your password. Add the URL scheme club360fit in Xcode (URL Types) so the link can open this app, or use the link from any browser.")
                     .font(.footnote)
+                    .foregroundStyle(Club360Theme.captionOnGlass)
             }
             if let ok = successMessage {
                 Section {
                     Text(ok)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Club360Theme.captionOnGlass)
                         .font(.footnote)
                 }
             }
@@ -63,8 +65,9 @@ struct ForgotPasswordView: View {
                 .disabled(isSending || email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
         }
-        .tint(Club360Theme.tealDark)
+        .tint(Club360Theme.burgundy)
         .club360FormScreen()
+        .preferredColorScheme(.light)
         .navigationTitle("Forgot password")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.ultraThinMaterial, for: .navigationBar)

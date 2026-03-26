@@ -69,7 +69,7 @@ struct MyScheduleView: View {
 
                     if model.upcoming.isEmpty, model.past.isEmpty, !model.isLoading {
                         Text("No sessions scheduled yet.")
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Club360Theme.captionOnGlass)
                     }
                     if !model.upcoming.isEmpty {
                         Text("Upcoming")
@@ -111,8 +111,8 @@ struct MyScheduleView: View {
         return VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .top, spacing: 10) {
                 Text("\(Club360DateFormats.displayDay(fromPostgresDay: s.date)) at \(s.time) – \(s.title)")
-                    .font(small ? .caption.weight(.medium) : .body.weight(.medium))
-                    .foregroundStyle(small ? Club360Theme.cardSubtitle : Club360Theme.cardTitle)
+                    .font(small ? .caption.weight(.semibold) : .body.weight(.semibold))
+                    .foregroundStyle(Club360Theme.cardTitle)
                     .multilineTextAlignment(.leading)
                 Spacer(minLength: 8)
                 Club360InfoTrailingButton(isExpanded: expanded)
@@ -127,8 +127,8 @@ struct MyScheduleView: View {
             let n = (s.notes ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             if !n.isEmpty {
                 Text(n)
-                    .font(.caption)
-                    .foregroundStyle(Club360Theme.cardSubtitle)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(Club360Theme.captionOnGlass)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

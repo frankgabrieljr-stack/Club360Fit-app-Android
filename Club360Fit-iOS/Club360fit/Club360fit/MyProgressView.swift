@@ -79,7 +79,7 @@ struct MyProgressView: View {
                     if model.checkIns.isEmpty, !model.isLoading {
                         Text("No check-ins yet.")
                             .font(.body)
-                            .foregroundStyle(Club360Theme.cardSubtitle)
+                            .foregroundStyle(Club360Theme.captionOnGlass)
                     } else {
                         ForEach(model.checkIns, id: \.rowIdentity) { checkIn in
                             let checkExpanded = Binding<Bool>(
@@ -129,8 +129,8 @@ struct MyProgressView: View {
                                 let noteText = (checkIn.notes ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
                                 if !noteText.isEmpty {
                                     Text(noteText)
-                                        .font(.caption)
-                                        .foregroundStyle(Club360Theme.cardSubtitle)
+                                        .font(.caption.weight(.medium))
+                                        .foregroundStyle(Club360Theme.captionOnGlass)
                                 }
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)

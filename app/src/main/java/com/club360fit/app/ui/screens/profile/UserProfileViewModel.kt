@@ -84,7 +84,7 @@ class UserProfileViewModel : ViewModel() {
             if (lastSignIn != null) {
                 val javaInstant = java.time.Instant.ofEpochMilli(lastSignIn.toEpochMilliseconds())
                 val zoned = javaInstant.atZone(ZoneId.systemDefault())
-                zoned.format(DateTimeFormatter.ofPattern("MMM d, yyyy 'at' h:mm a"))
+                zoned.format(DateTimeFormatter.ofPattern("MMM dd yyyy 'at' h:mm a"))
             } else null
         } catch (_: Exception) { null }
 

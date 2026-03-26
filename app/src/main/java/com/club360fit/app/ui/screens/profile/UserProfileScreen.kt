@@ -237,6 +237,29 @@ fun UserProfileScreen(
                         )
                     }
                 }
+                if (state.roleLabel == "Admin") {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)),
+                        shape = CardDefaults.shape
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = "Coach & admin access",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "New sign-ups are always clients. To promote someone to coach/admin: in Supabase open Authentication → Users, select their account, and under User metadata set the key \"role\" to the string \"admin\", then save. They must sign out and sign in again. The app cannot change another user’s role from the phone.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
                 state.errorMessage?.let { msg ->
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(

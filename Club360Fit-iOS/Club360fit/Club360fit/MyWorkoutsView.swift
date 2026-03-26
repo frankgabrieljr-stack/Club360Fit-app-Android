@@ -94,8 +94,8 @@ struct MyWorkoutsView: View {
                         Club360SegmentedProgressBar(value: pct, segments: 4)
 
                         Text("\(model.weekLogged) / \(model.weekExpected) sessions · \(Int((pct * 100).rounded()))%")
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(Club360Theme.cardSubtitle)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Club360Theme.captionOnGlass)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(18)
@@ -116,13 +116,13 @@ struct MyWorkoutsView: View {
                     if let toast = model.toast {
                         Text(toast)
                             .font(.footnote.weight(.medium))
-                            .foregroundStyle(Club360Theme.cardSubtitle)
+                            .foregroundStyle(Club360Theme.captionOnGlass)
                     }
 
                     if model.plans.isEmpty, !model.isLoading {
                         Text("No workout plans assigned yet.")
                             .font(.body)
-                            .foregroundStyle(Club360Theme.cardSubtitle)
+                            .foregroundStyle(Club360Theme.captionOnGlass)
                             .padding(.top, 8)
                     } else {
                         if !model.plans.isEmpty {

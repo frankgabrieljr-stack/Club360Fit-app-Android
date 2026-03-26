@@ -56,7 +56,6 @@ class AuthViewModel : ViewModel() {
     fun updateMealsPerDay(value: String) = _uiState.update { it.copy(mealsPerDay = value) }
     fun updateWorkoutFrequency(value: String) = _uiState.update { it.copy(workoutFrequency = value) }
     fun updateOverallGoal(value: String) = _uiState.update { it.copy(overallGoal = value) }
-
     fun clearError() = _uiState.update { it.copy(errorMessage = null) }
     fun clearResetMessage() = _uiState.update { it.copy(resetEmailSent = false, resetErrorMessage = null) }
 
@@ -106,7 +105,7 @@ class AuthViewModel : ViewModel() {
                         supabase.auth.signUpWith(Email) {
                             email = state.email.trim()
                             password = state.password
-                Remove self-promotion role assignment logic from AuthViewModel            data = buildJsonObject {
+                            data = buildJsonObject {
                                 put("name", JsonPrimitive(state.name))
                                 put("age", JsonPrimitive(state.age))
                                 put("height", JsonPrimitive(state.height))
@@ -117,6 +116,8 @@ class AuthViewModel : ViewModel() {
                                 put("meals_per_day", JsonPrimitive(state.mealsPerDay))
                                 put("workout_frequency", JsonPrimitive(state.workoutFrequency))
                                 put("overall_goal", JsonPrimitive(state.overallGoal))
+                                // Coach/admin is assigned in Supabase (Auth → Users → metadata), not from the app.
+                                put("role", JsonPrimitive("client"))
                             }
                         }
                     }

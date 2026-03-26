@@ -29,6 +29,7 @@ struct ChangePasswordView: View {
             } footer: {
                 Text("Use at least 6 characters. This updates your Supabase account password.")
                     .font(.footnote)
+                    .foregroundStyle(Club360Theme.captionOnGlass)
             }
             if let error {
                 Section {
@@ -40,7 +41,7 @@ struct ChangePasswordView: View {
             if let message {
                 Section {
                     Text(message)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Club360Theme.captionOnGlass)
                         .font(.footnote)
                 }
             }
@@ -65,8 +66,9 @@ struct ChangePasswordView: View {
                 .disabled(isSaving || !canSave)
             }
         }
-        .tint(Club360Theme.tealDark)
+        .tint(Club360Theme.burgundy)
         .club360FormScreen()
+        .preferredColorScheme(.light)
         .navigationTitle("Change password")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.ultraThinMaterial, for: .navigationBar)

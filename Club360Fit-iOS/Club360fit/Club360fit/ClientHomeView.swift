@@ -32,7 +32,8 @@ struct ClientHomeView: View {
             .tabItem { Label("Profile", systemImage: "person.crop.circle") }
             .tag(ClientTab.profile)
         }
-        .tint(Club360Theme.tealDark)
+        .tint(Club360Theme.burgundy)
+        .preferredColorScheme(.light)
         .environment(homeModel)
         .environment(\.clientTabRouter, tabRouter)
         .task(id: auth.session?.user.id) {
@@ -123,7 +124,7 @@ private struct ClientHomeTab: View {
                                     title: "Meals",
                                     subtitle: mealSubtitle,
                                     systemImage: "takeoutbag.and.cup.and.straw.fill",
-                                    accent: Club360Theme.teal
+                                    accent: Club360Theme.burgundy
                                 )
                             }
                             .disabled(!home.canViewNutrition)
@@ -149,7 +150,7 @@ private struct ClientHomeTab: View {
                                     title: "Habits",
                                     subtitle: "Water · steps · sleep",
                                     systemImage: "checkmark.circle.fill",
-                                    accent: Club360Theme.teal
+                                    accent: Club360Theme.burgundy
                                 )
                             }
 
@@ -269,11 +270,11 @@ private struct ClientHomeTab: View {
             HStack {
                 Text("Next session")
                     .font(.caption.weight(.bold))
-                    .foregroundStyle(Club360Theme.cardSubtitle)
+                    .foregroundStyle(Club360Theme.captionOnTintedCard)
                     .textCase(.uppercase)
                 Spacer()
                 Image(systemName: "calendar.badge.clock")
-                    .foregroundStyle(Club360Theme.cardSubtitle)
+                    .foregroundStyle(Club360Theme.burgundy)
             }
             Text(home.nextSessionLine ?? "No upcoming sessions scheduled.")
                 .font(.body.weight(.semibold))
@@ -281,7 +282,7 @@ private struct ClientHomeTab: View {
                 .fixedSize(horizontal: false, vertical: true)
             Text("\(home.upcomingSessionCount) upcoming")
                 .font(.caption.weight(.medium))
-                .foregroundStyle(Club360Theme.cardSubtitle)
+                .foregroundStyle(Club360Theme.captionOnTintedCard)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(18)

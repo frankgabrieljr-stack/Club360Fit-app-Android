@@ -58,7 +58,7 @@ struct UserProfileView: View {
 
                     Text("Change photo")
                         .font(.caption.weight(.medium))
-                        .foregroundStyle(Club360Theme.tealDark.opacity(0.75))
+                        .foregroundStyle(Club360Theme.burgundy.opacity(0.9))
 
                     Text(displayName)
                         .font(.title2.bold())
@@ -67,19 +67,36 @@ struct UserProfileView: View {
                     if let email = auth.session?.user.email {
                         Text(email)
                             .font(.body)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Club360Theme.captionOnGlass)
                     }
 
                     HStack {
                         Text("Status")
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Club360Theme.captionOnGlass)
                         Spacer()
                         Text(roleLabel)
                             .fontWeight(.semibold)
-                            .foregroundStyle(Club360Theme.tealDark)
+                            .foregroundStyle(Club360Theme.burgundy)
                     }
                     .padding(16)
                     .club360Glass()
+
+                    if auth.session?.user.isAdminRole == true {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Coach & admin access")
+                                .font(.headline.weight(.semibold))
+                                .foregroundStyle(Club360Theme.cardTitle)
+                            Text(
+                                "New sign-ups are always clients. As an admin, open a member from Clients → use Grant coach access on their hub, or set role in Supabase (Authentication → Users → User metadata). Deploy the set-user-role Edge Function from the repo for the in-app button. The member must sign out and sign in again."
+                            )
+                            .font(.footnote)
+                            .foregroundStyle(Club360Theme.captionOnGlass)
+                            .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(16)
+                        .club360Glass(cornerRadius: 22)
+                    }
 
                     if let uploadError {
                         Text(uploadError)
@@ -103,6 +120,7 @@ struct UserProfileView: View {
                 .padding()
             }
         }
+        .preferredColorScheme(.light)
         .navigationTitle("Profile")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
@@ -160,14 +178,21 @@ struct UserProfileView: View {
     }
 
     private func uploadAvatar(from item: PhotosPickerItem?) async {
-        guard let item,
-              let data = try? await item.loadTransferable(type: Data.self),
-              let uid = auth.session?.user.id.uuidString else { return }
+        guard let item else { return }
+        guard let raw = try? await item.loadTransferable(type: Data.self) else {
+            uploadError = "Could not read the photo. Try another image."
+            return
+        }
+        guard let jpeg = Club360AvatarImageProcessing.jpegDataForAvatarUpload(raw) else {
+            uploadError = "Could not use this image format. Try a photo from your library."
+            return
+        }
+        guard let uid = auth.session?.user.id.uuidString else { return }
         isUploadingAvatar = true
         uploadError = nil
         defer { isUploadingAvatar = false }
         do {
-            let url = try await ClientDataService.uploadUserAvatar(data: data, userId: uid)
+            let url = try await ClientDataService.uploadUserAvatar(data: jpeg, userId: uid)
             do {
                 try await auth.updateUserMetadata(["avatar_url": .string(url.absoluteString)])
             } catch {

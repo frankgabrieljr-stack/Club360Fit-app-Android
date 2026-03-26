@@ -106,7 +106,7 @@ struct MyMealsView: View {
                                 Spacer(minLength: 0)
                                 Image(systemName: "chevron.right")
                                     .font(.caption.weight(.semibold))
-                                    .foregroundStyle(Club360Theme.cardSubtitle)
+                                    .foregroundStyle(Club360Theme.captionOnGlass)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                         }
@@ -119,7 +119,7 @@ struct MyMealsView: View {
                     if model.plans.isEmpty, !model.isLoading {
                         Text("No meal plans assigned yet.")
                             .font(.body)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Club360Theme.captionOnGlass)
                     } else {
                         ForEach(model.plans, id: \.rowIdentity) { plan in
                             let planExpanded = Binding<Bool>(

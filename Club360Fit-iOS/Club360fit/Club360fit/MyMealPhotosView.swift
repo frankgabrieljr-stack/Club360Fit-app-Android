@@ -74,7 +74,7 @@ struct MyMealPhotosView: View {
                     if isCoachReviewing, !model.isLoading {
                         Text("Add quick feedback so your client knows if portions are too much, too little, or on track.")
                             .font(.subheadline)
-                            .foregroundStyle(Club360Theme.cardSubtitle)
+                            .foregroundStyle(Club360Theme.captionOnGlass)
                             .fixedSize(horizontal: false, vertical: true)
                     }
 
@@ -152,22 +152,26 @@ private struct AddMealPhotoSheet: View {
         UIImagePickerController.isSourceTypeAvailable(.camera)
     }
 
+    private var previewUIImage: UIImage? {
+        pickedData.flatMap { UIImage(data: $0) }
+    }
+
     var body: some View {
         NavigationStack {
             Form {
-                Section("Photo") {
+                Section {
                     Button {
                         showCamera = true
                     } label: {
                         Label("Take picture", systemImage: "camera.fill")
                     }
                     .disabled(!cameraAvailable)
-                    .foregroundStyle(Club360Theme.tealDark)
+                    .foregroundStyle(Club360Theme.burgundy)
 
                     PhotosPicker(selection: $selectedItem, matching: .images) {
                         Label("Choose from library", systemImage: "photo.on.rectangle")
                     }
-                    .tint(Club360Theme.tealDark)
+                    .tint(Club360Theme.burgundy)
                     .onChange(of: selectedItem) { _, new in
                         Task { await loadPhoto(from: new) }
                     }
@@ -175,19 +179,41 @@ private struct AddMealPhotoSheet: View {
                     if !cameraAvailable {
                         Text("Camera isn’t available here (e.g. Simulator). Use “Choose from library” or run on a device.")
                             .font(.caption)
-                            .foregroundStyle(Club360Theme.cardSubtitle)
+                            .foregroundStyle(Club360Theme.captionOnGlass)
                     }
 
-                    if pickedData != nil {
-                        Text("Image ready to upload")
-                            .font(.caption)
-                            .foregroundStyle(Club360Theme.cardSubtitle)
+                    if let img = previewUIImage {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Preview")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(Club360Theme.cardTitle)
+                            Image(uiImage: img)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(maxHeight: 260)
+                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                        .stroke(Color.black.opacity(0.12), lineWidth: 1)
+                                )
+                            Text("Review the photo, then tap Upload.")
+                                .font(.caption)
+                                .foregroundStyle(Club360Theme.captionOnGlass)
+                        }
+                        .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
                     }
+                } header: {
+                    Text("Photo")
+                        .foregroundStyle(Club360Theme.cardTitle)
                 }
-                Section("Details") {
+
+                Section {
                     DatePicker("Meal date", selection: $mealDate, displayedComponents: .date)
                     TextField("Notes (optional)", text: $notes, axis: .vertical)
                         .lineLimit(2...4)
+                } header: {
+                    Text("Details")
+                        .foregroundStyle(Club360Theme.cardTitle)
                 }
                 if let errorMessage {
                     Section {
@@ -197,8 +223,9 @@ private struct AddMealPhotoSheet: View {
                     }
                 }
             }
-            .tint(Club360Theme.tealDark)
+            .tint(Club360Theme.burgundy)
             .club360FormScreen()
+            .preferredColorScheme(.light)
             .navigationTitle("Add meal photo")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
@@ -214,7 +241,7 @@ private struct AddMealPhotoSheet: View {
                         ProgressView()
                     } else {
                         Button("Upload") { Task { await upload() } }
-                            .foregroundStyle(Club360Theme.tealDark)
+                            .foregroundStyle(Club360Theme.burgundy)
                             .disabled(pickedData == nil)
                     }
                 }

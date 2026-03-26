@@ -17,7 +17,6 @@ data class ClientProfileUiState(
         fullName = "",
         goal = ""
     ),
-    val isAdmin: Boolean = false,
     val error: String? = null
 )
 
@@ -34,8 +33,7 @@ class ClientProfileViewModel(
                     val dto = ClientRepository.getClient(clientId)
                     _uiState.value = ClientProfileUiState(
                         isLoading = false,
-                        client = dto,
-                        isAdmin = false // Default or load from metadata if possible
+                        client = dto
                     )
                 } catch (e: Exception) {
                     _uiState.value = _uiState.value.copy(
@@ -94,10 +92,6 @@ class ClientProfileViewModel(
         )
     }
 
-    fun setAdmin(isAdmin: Boolean) {
-        _uiState.value = _uiState.value.copy(isAdmin = isAdmin)
-    }
-
     fun save(onSuccess: () -> Unit, onError: ((String) -> Unit)? = null) {
         val state = _uiState.value
         val dto = state.client
@@ -105,8 +99,6 @@ class ClientProfileViewModel(
         viewModelScope.launch {
             try {
                 ClientRepository.upsertClient(dto)
-                // Note: role management should be done via Supabase Dashboard for now
-                // to avoid the admin user accidentally changing their own role.
                 onSuccess()
             } catch (e: Exception) {
                 val msg = e.message ?: "Save failed"

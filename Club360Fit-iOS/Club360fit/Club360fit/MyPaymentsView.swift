@@ -76,7 +76,7 @@ struct MyPaymentsView: View {
 
                     if model.settings == nil, !model.isLoading {
                         Text("Your coach hasn’t set up payment info yet.")
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Club360Theme.captionOnGlass)
                     }
 
                     if let s = model.settings {
@@ -247,8 +247,11 @@ struct MyPaymentsView: View {
     private func copyRow(label: String, value: String) -> some View {
         HStack {
             VStack(alignment: .leading) {
-                Text(label).font(.caption).foregroundStyle(.secondary)
+                Text(label)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(Club360Theme.captionOnGlass)
                 Text(value)
+                    .foregroundStyle(Club360Theme.cardTitle)
             }
             Spacer()
             Button {
@@ -283,8 +286,8 @@ struct MyPaymentsView: View {
                 Spacer(minLength: 8)
                 if let t = c.submittedAt {
                     Text(Club360Formatting.formatPaymentInstant(t))
-                        .font(.caption2)
-                        .foregroundStyle(Club360Theme.cardSubtitle)
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(Club360Theme.captionOnGlass)
                 }
                 Club360InfoTrailingButton(isExpanded: expanded)
             }
@@ -301,8 +304,8 @@ struct MyPaymentsView: View {
                 .foregroundStyle(Club360Theme.cardTitle)
             if !c.note.isEmpty {
                 Text(c.note)
-                    .font(.caption)
-                    .foregroundStyle(Club360Theme.cardSubtitle)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(Club360Theme.captionOnGlass)
             }
         }
         .padding(16)
@@ -337,8 +340,8 @@ struct MyPaymentsView: View {
                     .foregroundStyle(Club360Theme.cardTitle)
                 Spacer(minLength: 8)
                 Text(Club360Formatting.formatPaymentInstant(r.paidAt))
-                    .font(.caption2)
-                    .foregroundStyle(Club360Theme.cardSubtitle)
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(Club360Theme.captionOnGlass)
                 Club360InfoTrailingButton(isExpanded: expanded)
             }
             if expandedRecordHelp.wrappedValue.contains(r.id) {
@@ -354,8 +357,8 @@ struct MyPaymentsView: View {
                 .foregroundStyle(Club360Theme.cardTitle)
             if let n = r.note, !n.isEmpty {
                 Text(n)
-                    .font(.caption)
-                    .foregroundStyle(Club360Theme.cardSubtitle)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(Club360Theme.captionOnGlass)
             }
         }
         .padding(16)

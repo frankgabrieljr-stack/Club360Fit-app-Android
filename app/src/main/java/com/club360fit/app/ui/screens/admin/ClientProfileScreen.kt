@@ -70,6 +70,7 @@ import com.club360fit.app.data.ScheduleRepository
 import com.club360fit.app.ui.utils.toDisplayDate
 import com.club360fit.app.ui.theme.BurgundyPrimary
 import com.club360fit.app.ui.utils.fromFeetInches
+import com.club360fit.app.ui.utils.formatWeightLbsFromKg
 import com.club360fit.app.ui.utils.fromPounds
 import com.club360fit.app.ui.utils.toFeetInches
 import com.club360fit.app.ui.utils.SubmitResultMessages
@@ -196,7 +197,9 @@ fun ClientProfileScreen(
                             val (ft, inc) = it.toFeetInches()
                             Text("Height: ${ft}' ${inc}\"")
                         }
-                        c.weightKg?.let { Text("Weight: ${it.toPounds()} lbs") }
+                        c.weightKg?.let { w ->
+                            formatWeightLbsFromKg(w)?.let { label -> Text("Weight: $label") }
+                        }
                         c.foodRestrictions?.takeIf { it.isNotBlank() }?.let { Text("Food Restrictions: $it") }
                     }
                 }
@@ -403,19 +406,12 @@ fun ClientProfileScreen(
                     onChecked = { viewModel.updatePrivilege(events = it) }
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("Admin access", style = MaterialTheme.typography.bodyLarge)
-                    Switch(
-                        checked = state.isAdmin,
-                        onCheckedChange = viewModel::setAdmin,
-                        colors = SwitchDefaults.colors(checkedThumbColor = BurgundyPrimary)
-                    )
-                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Coach/admin access for a member is not edited here. In Supabase: Authentication → Users → select the user → User metadata → set \"role\" to \"admin\"; they must sign out and back in.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 state.error?.let {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(it, color = MaterialTheme.colorScheme.error)

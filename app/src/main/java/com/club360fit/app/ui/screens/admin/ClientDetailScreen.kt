@@ -13,7 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.club360fit.app.ui.theme.BurgundyPrimary
 import com.club360fit.app.ui.utils.toFeetInches
-import com.club360fit.app.ui.utils.toPounds
+import com.club360fit.app.ui.utils.formatWeightLbsFromKg
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,10 +65,8 @@ fun ClientDetailScreen(
             } ?: "N/A"
             ProfileInfoRow("Height", heightDisplay)
             
-            // Weight in Imperial
-            val weightDisplay = client.weightKg?.let {
-                "${it.toPounds()} lbs"
-            } ?: "N/A"
+            // Weight in Imperial (stored kg → display lbs)
+            val weightDisplay = client.weightKg?.let { formatWeightLbsFromKg(it) } ?: "N/A"
             ProfileInfoRow("Weight", weightDisplay)
             
             Spacer(modifier = Modifier.height(16.dp))

@@ -40,14 +40,21 @@ enum Club360Theme {
 
     static let titleForeground = burgundy
 
-    static let cardTitle = Color(red: 0.18, green: 0.14, blue: 0.12)
+    static let cardTitle = Color(red: 0.12, green: 0.10, blue: 0.09)
 
+    /// Legacy taupe — prefer [captionOnGlass] on glass cards for readability.
     static let cardSubtitle = taupe
+
+    /// Secondary text on cream / glass — darker than taupe for WCAG-friendly contrast.
+    static let captionOnGlass = Color(red: 0.30, green: 0.26, blue: 0.23)
+
+    /// Small caps / meta lines on tinted cards (e.g. next session).
+    static let captionOnTintedCard = Color(red: 0.28, green: 0.24, blue: 0.22)
 
     static let accentPrimary = burgundy
 
     /// Frosted tile base — sits under material on cream gradients.
-    static let cardBaseFill = cream.opacity(0.94)
+    static let cardBaseFill = cream.opacity(0.97)
 
     // MARK: Gradients
 

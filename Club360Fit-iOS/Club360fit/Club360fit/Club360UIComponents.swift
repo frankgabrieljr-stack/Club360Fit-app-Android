@@ -125,7 +125,7 @@ struct Club360InfoHelpBlock: View {
             }
             Text(helpBody)
                 .font(.footnote)
-                .foregroundStyle(Club360Theme.cardSubtitle)
+                .foregroundStyle(Club360Theme.captionOnGlass)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .transition(.opacity.combined(with: .move(edge: .top)))
@@ -196,7 +196,7 @@ struct Club360HomeTile: View {
                 .foregroundStyle(Club360Theme.cardTitle)
             Text(subtitle)
                 .font(.caption)
-                .foregroundStyle(Club360Theme.cardSubtitle)
+                .foregroundStyle(Club360Theme.captionOnGlass)
                 .fixedSize(horizontal: false, vertical: true)
                 .lineLimit(3)
         }

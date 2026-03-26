@@ -27,7 +27,8 @@ struct AdminHomeView: View {
             }
             .tabItem { Label("Profile", systemImage: "person.crop.circle") }
         }
-        .tint(Club360Theme.tealDark)
+        .tint(Club360Theme.burgundy)
+        .preferredColorScheme(.light)
     }
 }
 
@@ -133,12 +134,12 @@ private struct AdminClientRow: View {
                     .foregroundStyle(Club360Theme.cardTitle)
                 Text(subtitle)
                     .font(.caption)
-                    .foregroundStyle(Club360Theme.cardSubtitle)
+                    .foregroundStyle(Club360Theme.captionOnGlass)
             }
             Spacer(minLength: 8)
             Image(systemName: "chevron.right")
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(Club360Theme.cardSubtitle.opacity(0.8))
+                .foregroundStyle(Club360Theme.captionOnGlass.opacity(0.85))
         }
         .padding(18)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -153,6 +154,9 @@ struct AdminClientHubView: View {
     let displayTitle: String
 
     @State private var homeModel = ClientHomeViewModel()
+    @State private var roleBusy = false
+    @State private var roleError: String?
+    @State private var roleSuccess: String?
 
     var body: some View {
         Group {
@@ -221,15 +225,17 @@ struct AdminClientHubView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
                     HStack(alignment: .center, spacing: 14) {
-                        Image("LogoBurgundy")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 52, height: 52)
-                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        memberAvatar
+                            .frame(width: 56, height: 56)
+                            .clipShape(Circle())
+                            .overlay(
+                                Circle()
+                                    .stroke(Color.black.opacity(0.1), lineWidth: 1)
+                            )
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Member")
                                 .font(.caption.weight(.bold))
-                                .foregroundStyle(Club360Theme.cardSubtitle)
+                                .foregroundStyle(Club360Theme.captionOnGlass)
                                 .textCase(.uppercase)
                             Text(homeModel.welcomeName)
                                 .font(.title2.weight(.bold))
@@ -237,6 +243,53 @@ struct AdminClientHubView: View {
                         }
                     }
                     .padding(.top, 4)
+
+                    if homeModel.memberAuthUserId != nil {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Account access")
+                                .font(.headline.weight(.semibold))
+                                .foregroundStyle(Club360Theme.cardTitle)
+                            Text(
+                                "Grant coach/admin access so they can use the Hub, or set member-only access. They must sign out and sign in again. Requires the set-user-role Edge Function deployed to your Supabase project."
+                            )
+                            .font(.footnote)
+                            .foregroundStyle(Club360Theme.captionOnGlass)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                            if let roleSuccess {
+                                Text(roleSuccess)
+                                    .font(.footnote.weight(.medium))
+                                    .foregroundStyle(Club360Theme.burgundy)
+                            }
+                            if let roleError {
+                                Text(roleError)
+                                    .font(.footnote)
+                                    .foregroundStyle(.red)
+                            }
+
+                            VStack(spacing: 10) {
+                                Button {
+                                    Task { await applyMemberRole("admin") }
+                                } label: {
+                                    Text(roleBusy ? "Updating…" : "Grant coach / admin access")
+                                }
+                                .buttonStyle(Club360PrimaryGradientButtonStyle())
+                                .disabled(roleBusy)
+
+                                Button {
+                                    Task { await applyMemberRole("client") }
+                                } label: {
+                                    Text("Set to member access only")
+                                }
+                                .buttonStyle(.bordered)
+                                .tint(Club360Theme.burgundy)
+                                .disabled(roleBusy)
+                            }
+                        }
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .club360Glass(cornerRadius: 22)
+                    }
 
                     VStack(alignment: .leading, spacing: 10) {
                         HStack(alignment: .center, spacing: 10) {
@@ -248,7 +301,7 @@ struct AdminClientHubView: View {
                         }
                         Text("Create and assign workout plans, meal plans, and sessions from the Hub tab. Use the tiles below to review what’s assigned for \(homeModel.welcomeName).")
                             .font(.footnote)
-                            .foregroundStyle(Club360Theme.cardSubtitle)
+                            .foregroundStyle(Club360Theme.captionOnGlass)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     .padding(18)
@@ -379,16 +432,65 @@ struct AdminClientHubView: View {
         }
     }
 
+    private var memberAvatar: some View {
+        Group {
+            if let uid = homeModel.memberAuthUserId,
+               let url = ClientDataService.publicAvatarURLForAuthUserId(uid) {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .empty:
+                        ZStack {
+                            Club360Theme.creamWarm
+                            ProgressView()
+                                .tint(Club360Theme.burgundy)
+                        }
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    default:
+                        Image("LogoBurgundy")
+                            .resizable()
+                            .scaledToFit()
+                            .padding(6)
+                    }
+                }
+            } else {
+                Image("LogoBurgundy")
+                    .resizable()
+                    .scaledToFit()
+                    .padding(4)
+            }
+        }
+    }
+
+    private func applyMemberRole(_ role: String) async {
+        guard let uid = homeModel.memberAuthUserId else { return }
+        roleBusy = true
+        roleError = nil
+        roleSuccess = nil
+        defer { roleBusy = false }
+        do {
+            try await AdminRoleService.setUserRole(targetAuthUserId: uid, role: role)
+            roleSuccess =
+                role == "admin"
+                ? "Coach access updated. They will see the Hub after signing in again."
+                : "Member access set. They will see the client app after signing in again."
+        } catch {
+            roleError = error.localizedDescription
+        }
+    }
+
     private var adminNextSessionCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text("Next session")
                     .font(.caption.weight(.bold))
-                    .foregroundStyle(Club360Theme.cardSubtitle)
+                    .foregroundStyle(Club360Theme.captionOnTintedCard)
                     .textCase(.uppercase)
                 Spacer()
                 Image(systemName: "calendar.badge.clock")
-                    .foregroundStyle(Club360Theme.cardSubtitle)
+                    .foregroundStyle(Club360Theme.burgundy)
             }
             Text(homeModel.nextSessionLine ?? "No upcoming sessions scheduled.")
                 .font(.body.weight(.semibold))
@@ -396,7 +498,7 @@ struct AdminClientHubView: View {
                 .fixedSize(horizontal: false, vertical: true)
             Text("\(homeModel.upcomingSessionCount) upcoming")
                 .font(.caption.weight(.medium))
-                .foregroundStyle(Club360Theme.cardSubtitle)
+                .foregroundStyle(Club360Theme.captionOnTintedCard)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(18)

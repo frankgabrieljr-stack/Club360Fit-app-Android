@@ -434,7 +434,7 @@ private fun formatCoachFeedbackTimeForClient(iso: String): String =
     try {
         val instant = Instant.parse(iso)
         val z = instant.atZone(ZoneId.systemDefault())
-        DateTimeFormatter.ofPattern("MMM d, yyyy · h:mm a").format(z)
+        DateTimeFormatter.ofPattern("MMM dd yyyy · h:mm a").format(z)
     } catch (_: Exception) {
         iso
     }

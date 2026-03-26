@@ -14,6 +14,9 @@ final class ClientHomeViewModel {
     var welcomeName = "there"
     var clientId: String?
 
+    /// Auth `user_id` on the loaded `clients` row — public avatar URL is `avatars/{user_id}/avatar.jpg`.
+    var memberAuthUserId: String?
+
     var canViewWorkouts = true
     var canViewNutrition = true
     var canViewEvents = false
@@ -92,6 +95,7 @@ final class ClientHomeViewModel {
 
     private func applyDashboard(for row: ClientDTO, clientId cid: String, welcomeEmail: String?) async throws {
         self.clientId = cid
+        memberAuthUserId = row.userId
         memberSinceStartOfDay = Self.startOfDayFromSupabaseTimestamp(row.createdAt)
         welcomeName = welcomeEmail.map { Self.welcomeName(from: row, email: $0) } ?? Self.coachViewWelcomeName(from: row)
         canViewWorkouts = row.canViewWorkouts
@@ -130,6 +134,7 @@ final class ClientHomeViewModel {
     private func resetSummary() {
         useCoachNotificationUnread = false
         clientId = nil
+        memberAuthUserId = nil
         memberSinceStartOfDay = nil
         welcomeName = "there"
         currentWorkoutTitle = nil

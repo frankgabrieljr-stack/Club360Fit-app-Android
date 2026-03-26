@@ -78,7 +78,7 @@ struct CoachMainHubView: View {
 
                         Text("Open a member to edit their assigned plans and sessions.")
                             .font(.footnote)
-                            .foregroundStyle(Club360Theme.cardSubtitle)
+                            .foregroundStyle(Club360Theme.captionOnGlass)
 
                         ForEach(admin.clients, id: \.stableId) { client in
                             if let cid = client.id, !cid.isEmpty {
@@ -92,12 +92,12 @@ struct CoachMainHubView: View {
                                                 .foregroundStyle(Club360Theme.cardTitle)
                                             Text("Plans & schedule editor")
                                                 .font(.caption)
-                                                .foregroundStyle(Club360Theme.cardSubtitle)
+                                                .foregroundStyle(Club360Theme.captionOnGlass)
                                         }
                                         Spacer()
                                         Image(systemName: "chevron.right")
                                             .font(.caption.weight(.semibold))
-                                            .foregroundStyle(Club360Theme.cardSubtitle.opacity(0.8))
+                                            .foregroundStyle(Club360Theme.captionOnGlass.opacity(0.8))
                                     }
                                     .padding(16)
                                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -328,7 +328,7 @@ struct CoachMainHubView: View {
             if dayEvents.isEmpty {
                 Text("No sessions.")
                     .font(.subheadline)
-                    .foregroundStyle(Club360Theme.cardSubtitle)
+                    .foregroundStyle(Club360Theme.captionOnGlass)
             } else {
                 ForEach(dayEvents, id: \.id) { ev in
                     VStack(alignment: .leading, spacing: 4) {
@@ -339,7 +339,7 @@ struct CoachMainHubView: View {
                             if let cid = ev.clientId, let name = overview.clientNameById[cid] {
                                 Text(name)
                                     .font(.caption.weight(.semibold))
-                                    .foregroundStyle(Club360Theme.cardSubtitle)
+                                    .foregroundStyle(Club360Theme.captionOnGlass)
                             }
                         }
                         Text(ev.title)
@@ -374,7 +374,7 @@ struct CoachMainHubView: View {
                 Spacer()
                 Image(systemName: "chevron.right")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(Club360Theme.cardSubtitle)
+                    .foregroundStyle(Club360Theme.captionOnGlass)
             }
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -509,13 +509,13 @@ private struct CoachStatButton: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(title)
                     .font(.caption.weight(.bold))
-                    .foregroundStyle(Club360Theme.cardSubtitle)
+                    .foregroundStyle(Club360Theme.captionOnGlass)
                 Text(value)
                     .font(.title.weight(.bold))
                     .foregroundStyle(tint)
                 Text(subtitle)
                     .font(.caption2)
-                    .foregroundStyle(Club360Theme.cardSubtitle)
+                    .foregroundStyle(Club360Theme.captionOnGlass)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(14)
@@ -562,7 +562,7 @@ private struct CoachHubCalendarStrip: View {
                 ForEach(weekdayHeaders, id: \.self) { s in
                     Text(s)
                         .font(.caption2.weight(.bold))
-                        .foregroundStyle(Club360Theme.cardSubtitle)
+                        .foregroundStyle(Club360Theme.captionOnGlass)
                         .frame(maxWidth: .infinity)
                 }
                 ForEach(Array(daysInMonthGrid().enumerated()), id: \.offset) { _, cell in

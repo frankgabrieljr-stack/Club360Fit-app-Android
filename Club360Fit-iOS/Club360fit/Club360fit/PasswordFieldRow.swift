@@ -17,6 +17,7 @@ struct PasswordFieldRow: View {
                     SecureField(title, text: $text)
                 }
             }
+            .foregroundStyle(Club360Theme.cardTitle)
             .textContentType(isNewPassword ? .newPassword : .password)
             .autocorrectionDisabled()
             .textInputAutocapitalization(.never)
@@ -25,7 +26,7 @@ struct PasswordFieldRow: View {
                 isVisible.toggle()
             } label: {
                 Image(systemName: isVisible ? "eye.slash.fill" : "eye.fill")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Club360Theme.captionOnGlass)
                     .accessibilityLabel(isVisible ? "Hide password" : "Show password")
             }
             .buttonStyle(.borderless)

@@ -132,7 +132,7 @@ struct MyNotificationsView: View {
                     if let created = n.createdAt {
                         Text(Club360Formatting.formatPaymentInstant(created))
                             .font(.caption)
-                            .foregroundStyle(Club360Theme.cardSubtitle)
+                            .foregroundStyle(Club360Theme.captionOnGlass)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)

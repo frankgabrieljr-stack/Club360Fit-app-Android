@@ -29,7 +29,7 @@ import com.club360fit.app.data.ScheduleEvent
 import com.club360fit.app.ui.theme.BurgundyPrimary
 import com.club360fit.app.ui.theme.Club360FitTheme
 import com.club360fit.app.ui.utils.toFeetInches
-import com.club360fit.app.ui.utils.toPounds
+import com.club360fit.app.ui.utils.formatWeightLbsFromKg
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -541,7 +541,9 @@ fun ClientCard(
                         Text("${ft}' ${inc}\"", style = MaterialTheme.typography.bodySmall)
                     }
                     weightKg?.let {
-                        Text("${it.toPounds()} lbs", style = MaterialTheme.typography.bodySmall)
+                        formatWeightLbsFromKg(it)?.let { label ->
+                            Text(label, style = MaterialTheme.typography.bodySmall)
+                        }
                     }
                 }
                 if (goal.isNotBlank()) {

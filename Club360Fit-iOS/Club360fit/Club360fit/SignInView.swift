@@ -11,6 +11,7 @@ struct SignInView: View {
         Form {
             Section {
                 TextField("Email", text: $email)
+                    .foregroundStyle(Club360Theme.cardTitle)
                     .textContentType(.emailAddress)
                     .keyboardType(.emailAddress)
                     .textInputAutocapitalization(.never)
@@ -62,8 +63,9 @@ struct SignInView: View {
                 }
             }
         }
-        .tint(Club360Theme.tealDark)
+        .tint(Club360Theme.burgundy)
         .club360FormScreen()
+        .preferredColorScheme(.light)
         .navigationTitle("Sign in")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.ultraThinMaterial, for: .navigationBar)

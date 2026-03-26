@@ -271,6 +271,11 @@ extension ClientDataService {
             .getPublicURL(path: path)
     }
 
+    /// Same path as uploads: `{auth_user_id}/avatar.jpg` (lowercase UUID).
+    static func publicAvatarURLForAuthUserId(_ authUserId: String) -> URL? {
+        try? avatarPublicURL(path: "\(authUserId.lowercased())/avatar.jpg")
+    }
+
     static func uploadUserAvatar(data: Data, userId: String) async throws -> URL {
         // Lowercase UUID so Storage path matches Supabase `auth.uid()::text` and RLS policies.
         let path = "\(userId.lowercased())/avatar.jpg"

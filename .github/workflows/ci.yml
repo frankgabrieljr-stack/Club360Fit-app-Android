@@ -1,0 +1,45 @@
+# Compiles Android (Kotlin) on every push/PR.
+# Builds iOS when `Club360Fit-iOS/` is tracked (remove `/Club360Fit-iOS/` from .gitignore to enable).
+
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  android:
+    name: Android (compileDebugKotlin)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Compile Kotlin
+        run: chmod +x gradlew && ./gradlew :app:compileDebugKotlin --no-daemon
+
+  ios:
+    name: iOS (xcodebuild)
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Club360fit
+        run: |
+          set -e
+          PROJ="Club360Fit-iOS/Club360fit/Club360fit.xcodeproj"
+          if [ ! -d "$PROJ" ]; then
+            echo "::notice title=iOS skipped::Club360Fit-iOS is not in this checkout (often gitignored). Remove '/Club360Fit-iOS/' from .gitignore and commit the iOS project, or push from a repo that includes it, to run iOS builds in CI."
+            exit 0
+          fi
+          xcodebuild -project "$PROJ" -scheme Club360fit \
+            -destination 'generic/platform=iOS Simulator' \
+            -quiet \
+            build

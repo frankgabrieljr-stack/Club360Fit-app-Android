@@ -58,8 +58,7 @@ final class Club360AuthSession {
         foodRestrictions: String,
         mealsPerDay: String,
         workoutFrequency: String,
-        overallGoal: String,
-        isAdmin: Bool
+        overallGoal: String
     ) async -> Bool {
         errorMessage = nil
         let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -74,7 +73,8 @@ final class Club360AuthSession {
             "meals_per_day": .string(mealsPerDay),
             "workout_frequency": .string(workoutFrequency),
             "overall_goal": .string(overallGoal),
-            "role": .string(isAdmin ? "admin" : "client"),
+            /// Coach/admin access is assigned in Supabase (Auth → Users → user metadata), not from the app.
+            "role": .string("client"),
         ]
         do {
             let response = try await client.auth.signUp(email: trimmedEmail, password: password, data: data)
@@ -131,9 +131,11 @@ final class Club360AuthSession {
         }
     }
 
-    /// Merge metadata keys (e.g. `avatar_url`) — same idea as Android `auth.updateUser { data = … }`.
-    func updateUserMetadata(_ data: [String: AnyJSON]) async throws {
-        _ = try await client.auth.update(user: UserAttributes(data: data))
+    /// Merges keys into existing `user_metadata` so fields like `name` and `role` are not wiped when updating `avatar_url`.
+    func updateUserMetadata(_ updates: [String: AnyJSON]) async throws {
+        let existing = session?.user.userMetadata ?? [:]
+        let merged = existing.merging(updates) { _, new in new }
+        _ = try await client.auth.update(user: UserAttributes(data: merged))
         _ = try await client.auth.user()
         session = client.auth.currentSession
     }

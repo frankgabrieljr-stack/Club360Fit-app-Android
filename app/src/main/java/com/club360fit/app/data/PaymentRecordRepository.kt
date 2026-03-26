@@ -77,12 +77,12 @@ fun parseIsoToLocalDate(iso: String): LocalDate = try {
 fun formatPaymentInstant(iso: String): String = try {
     val instant = Instant.parse(iso)
     instant.atZone(ZoneId.systemDefault())
-        .format(DateTimeFormatter.ofPattern("MMM d, yyyy · h:mm a"))
+        .format(DateTimeFormatter.ofPattern("MMM dd yyyy · h:mm a"))
 } catch (_: Exception) {
     try {
         java.time.OffsetDateTime.parse(iso).toInstant()
             .atZone(ZoneId.systemDefault())
-            .format(DateTimeFormatter.ofPattern("MMM d, yyyy · h:mm a"))
+            .format(DateTimeFormatter.ofPattern("MMM dd yyyy · h:mm a"))
     } catch (_: Exception) {
         iso
     }

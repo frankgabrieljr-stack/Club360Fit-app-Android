@@ -245,7 +245,6 @@ fun AuthScreen(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 OutlinedTextField(value = state.overallGoal, onValueChange = viewModel::updateOverallGoal, label = { Text("What's your overall goal?") }, modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BurgundyPrimary, focusedLabelColor = BurgundyPrimary, cursorColor = BurgundyPrimary))
-                Spacer(modifier = Modifier.height(12.dp))
             }
 
             state.errorMessage?.let { msg ->

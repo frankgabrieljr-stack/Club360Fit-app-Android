@@ -97,7 +97,7 @@ struct MyDailyHabitsView: View {
 
                         Text("Choose a day")
                             .font(.caption.weight(.bold))
-                            .foregroundStyle(Club360Theme.cardSubtitle)
+                            .foregroundStyle(Club360Theme.captionOnGlass)
                             .textCase(.uppercase)
 
                         DatePicker(
@@ -113,7 +113,7 @@ struct MyDailyHabitsView: View {
                         if let since = home.memberSinceStartOfDay {
                             Text("Earliest day matches your profile start (\(Club360DateFormats.displayDay(fromPostgresDay: Club360DateFormats.dayString(since)))).")
                                 .font(.caption2)
-                                .foregroundStyle(Club360Theme.cardSubtitle)
+                                .foregroundStyle(Club360Theme.captionOnGlass)
                         }
 
                         Button {
@@ -131,7 +131,7 @@ struct MyDailyHabitsView: View {
 
                         Text("Log once per day. Any entry counts toward your streak.")
                             .font(.caption)
-                            .foregroundStyle(Club360Theme.cardSubtitle)
+                            .foregroundStyle(Club360Theme.captionOnGlass)
 
                         Toggle("Water goal met", isOn: $waterDone)
                             .tint(Club360Theme.tealDark)
@@ -175,7 +175,7 @@ struct MyDailyHabitsView: View {
 
                             Text("Tap a day to edit it. Newest first.")
                                 .font(.caption)
-                                .foregroundStyle(Club360Theme.cardSubtitle)
+                                .foregroundStyle(Club360Theme.captionOnGlass)
 
                             ForEach(habitHistory) { row in
                                 Button {
@@ -209,14 +209,14 @@ struct MyDailyHabitsView: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(selected ? Club360Theme.burgundy : Club360Theme.cardTitle)
                 Text("\(water) · \(steps) · \(sleep)")
-                    .font(.caption)
-                    .foregroundStyle(Club360Theme.cardSubtitle)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(Club360Theme.captionOnGlass)
                     .lineLimit(2)
             }
             Spacer(minLength: 8)
             Image(systemName: "chevron.right")
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(Club360Theme.cardSubtitle.opacity(0.7))
+                .foregroundStyle(Club360Theme.captionOnGlass.opacity(0.85))
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 4)

@@ -135,7 +135,7 @@ struct MealPhotoLogCard: View {
             if let iso = log.coachFeedbackUpdatedAt {
                 Text(formatCoachFeedbackTime(iso))
                     .font(.caption)
-                    .foregroundStyle(Club360Theme.cardSubtitle)
+                    .foregroundStyle(Club360Theme.captionOnGlass)
             }
         }
     }
@@ -190,7 +190,7 @@ struct MealPhotoLogCard: View {
                     if let iso = log.coachFeedbackUpdatedAt {
                         Text(formatCoachFeedbackTime(iso))
                             .font(.caption)
-                            .foregroundStyle(Club360Theme.cardSubtitle)
+                            .foregroundStyle(Club360Theme.captionOnGlass)
                     }
                 }
                 .padding(12)
@@ -227,7 +227,7 @@ struct MealPhotoLogCard: View {
             if savedForClientDisplay == nil, let iso = log.coachFeedbackUpdatedAt {
                 Text(formatCoachFeedbackTime(iso))
                     .font(.caption)
-                    .foregroundStyle(Club360Theme.cardSubtitle)
+                    .foregroundStyle(Club360Theme.captionOnGlass)
             }
 
             if let feedbackError {

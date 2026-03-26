@@ -27,6 +27,7 @@ import com.club360fit.app.data.ProgressCheckInDto
 import com.club360fit.app.data.ProgressRepository
 import com.club360fit.app.ui.theme.BurgundyPrimary
 import com.club360fit.app.ui.utils.SubmitResultMessages
+import com.club360fit.app.ui.utils.poundsToKg
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
@@ -60,7 +61,7 @@ fun ClientLogProgressDialog(
                 OutlinedTextField(
                     value = weightText,
                     onValueChange = { weightText = it },
-                    label = { Text("Weight (kg, optional)") },
+                    label = { Text("Weight (lbs, optional)") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -107,7 +108,12 @@ fun ClientLogProgressDialog(
                         error = "Enter a valid date."
                         return@TextButton
                     }
-                    val weight = weightText.toDoubleOrNull()
+                    val weightLbs = weightText.trim().takeIf { it.isNotEmpty() }?.toDoubleOrNull()
+                    if (weightText.trim().isNotEmpty() && weightLbs == null) {
+                        error = "Enter a valid weight in pounds."
+                        return@TextButton
+                    }
+                    val weightKg = weightLbs?.let { it.poundsToKg() }
                     isSaving = true
                     error = null
                     scope.launch {
@@ -116,7 +122,7 @@ fun ClientLogProgressDialog(
                                 ProgressCheckInDto(
                                     clientId = clientId,
                                     checkInDate = date,
-                                    weightKg = weight,
+                                    weightKg = weightKg,
                                     notes = notes,
                                     workoutDone = workoutDone,
                                     mealsFollowed = mealsFollowed
