@@ -79,6 +79,7 @@ final class ClientHomeViewModel {
         defer { isLoading = false }
 
         do {
+            try await ClientDataService.claimCoachAssignmentIfNeeded(clientId: requestedId)
             guard let row = try await ClientDataService.fetchClientById(requestedId),
                   let cid = row.id, !cid.isEmpty else {
                 errorMessage = "Client not found or not visible to your account."

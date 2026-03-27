@@ -41,7 +41,7 @@ final class Club360AuthSession {
             _ = try await client.auth.user()
             session = client.auth.currentSession
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = Self.userFacingAuthError(error)
         }
     }
 
@@ -86,7 +86,7 @@ final class Club360AuthSession {
             session = nil
             return false
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = Self.userFacingAuthError(error)
             return false
         }
     }
@@ -97,7 +97,7 @@ final class Club360AuthSession {
             try await client.auth.signOut()
             session = nil
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = Self.userFacingAuthError(error)
         }
     }
 
@@ -138,5 +138,25 @@ final class Club360AuthSession {
         _ = try await client.auth.update(user: UserAttributes(data: merged))
         _ = try await client.auth.user()
         session = client.auth.currentSession
+    }
+
+    /// Supabase often returns a generic "Database error saving new user" when a trigger or constraint fails server-side.
+    private static func userFacingAuthError(_ error: Error) -> String {
+        let base: String = {
+            if let authError = error as? AuthError {
+                switch authError {
+                case let .api(message, _, _, _):
+                    return message
+                default:
+                    break
+                }
+            }
+            return error.localizedDescription
+        }()
+
+        if base.localizedCaseInsensitiveContains("database error saving new user") {
+            return base + "\n\nThis is a Supabase database issue (not your form). Common causes: a trigger on auth.users that inserts into another table failed, RLS blocked that insert, or a NOT NULL/default constraint. Check Supabase → Logs → Postgres for the exact SQL error, and review triggers on auth.users."
+        }
+        return base
     }
 }

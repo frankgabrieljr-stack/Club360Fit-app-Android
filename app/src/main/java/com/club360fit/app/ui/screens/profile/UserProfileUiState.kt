@@ -3,15 +3,24 @@ package com.club360fit.app.ui.screens.profile
 data class UserProfileUiState(
     val firstName: String = "",
     val lastName: String = "",
+    val bio: String = "",
+    val location: String = "",
+    val timezone: String = "",
+    val phone: String = "",
+    val coachHeadline: String = "",
+    val coachSpecialties: String = "",
+    val coachAvailability: String = "",
     val email: String = "",
     val lastLoginFormatted: String? = null,   // null → hide the line
     val avatarUrl: String? = null,
     val isUploadingAvatar: Boolean = false,
+    val isSavingProfile: Boolean = false,
     val roleLabel: String = "Client",
     val isLoading: Boolean = true,
     val errorMessage: String? = null,
     /** Shown once as a snackbar after a successful avatar upload. */
-    val uploadSuccessMessage: String? = null
+    val uploadSuccessMessage: String? = null,
+    val profileSavedMessage: String? = null
 ) {
     val displayName: String get() = when {
         firstName.isNotBlank() || lastName.isNotBlank() ->

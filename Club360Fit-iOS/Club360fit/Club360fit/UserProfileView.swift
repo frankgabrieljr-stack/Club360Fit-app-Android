@@ -3,11 +3,25 @@ import Observation
 import PhotosUI
 import SwiftUI
 import Supabase
+import UIKit
 
 /// Rich profile — mirrors Android `UserProfileScreen` (avatar, role, sign out).
 struct UserProfileView: View {
     @Environment(Club360AuthSession.self) private var auth: Club360AuthSession
     @State private var pickerItem: PhotosPickerItem?
+    @State private var pendingAvatarImage: UIImage?
+    @State private var showAvatarEditor = false
+    @State private var firstName = ""
+    @State private var lastName = ""
+    @State private var bio = ""
+    @State private var location = ""
+    @State private var timezone = ""
+    @State private var phone = ""
+    @State private var coachHeadline = ""
+    @State private var coachSpecialties = ""
+    @State private var coachAvailability = ""
+    @State private var isSavingProfile = false
+    @State private var profileMessage: String?
     @State private var isUploadingAvatar = false
     @State private var uploadError: String?
 
@@ -53,12 +67,18 @@ struct UserProfileView: View {
                     }
                     .disabled(isUploadingAvatar)
                     .onChange(of: pickerItem) { _, new in
-                        Task { await uploadAvatar(from: new) }
+                        Task { await prepareAvatarForEditing(from: new) }
                     }
 
                     Text("Change photo")
                         .font(.caption.weight(.medium))
                         .foregroundStyle(Club360Theme.burgundy.opacity(0.9))
+
+                    Button("Remove photo", role: .destructive) {
+                        Task { await removeAvatar() }
+                    }
+                    .font(.caption)
+                    .disabled(isUploadingAvatar)
 
                     Text(displayName)
                         .font(.title2.bold())
@@ -81,7 +101,105 @@ struct UserProfileView: View {
                     .padding(16)
                     .club360Glass()
 
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Profile details")
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(Club360Theme.cardTitle)
+
+                        TextField("First name", text: $firstName)
+                            .textFieldStyle(.roundedBorder)
+                        TextField("Last name", text: $lastName)
+                            .textFieldStyle(.roundedBorder)
+                        TextField("Short bio", text: $bio, axis: .vertical)
+                            .textFieldStyle(.roundedBorder)
+                            .lineLimit(2 ... 4)
+                        TextField("Location (city, country)", text: $location)
+                            .textFieldStyle(.roundedBorder)
+                        TextField("Timezone", text: $timezone)
+                            .textFieldStyle(.roundedBorder)
+                        TextField("Phone", text: $phone)
+                            .textFieldStyle(.roundedBorder)
+                            .keyboardType(.phonePad)
+
+                        if auth.session?.user.isAdminRole == true {
+                            Divider()
+                            Text("Coach details")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(Club360Theme.cardTitle)
+                            TextField("Coach headline", text: $coachHeadline)
+                                .textFieldStyle(.roundedBorder)
+                            TextField("Specialties (comma separated)", text: $coachSpecialties, axis: .vertical)
+                                .textFieldStyle(.roundedBorder)
+                                .lineLimit(2 ... 4)
+                            TextField("Availability", text: $coachAvailability, axis: .vertical)
+                                .textFieldStyle(.roundedBorder)
+                                .lineLimit(2 ... 4)
+                        }
+
+                        if let profileMessage {
+                            Text(profileMessage)
+                                .font(.footnote)
+                                .foregroundStyle(profileMessage.localizedCaseInsensitiveContains("saved") ? Club360Theme.burgundy : .red)
+                        }
+
+                        Button {
+                            Task { await saveProfileDetails() }
+                        } label: {
+                            Text(isSavingProfile ? "Saving…" : "Save details")
+                        }
+                        .buttonStyle(Club360PrimaryGradientButtonStyle())
+                        .disabled(isSavingProfile)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(16)
+                    .club360Glass(cornerRadius: 22)
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Account")
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(Club360Theme.cardTitle)
+                        Text("Email")
+                            .font(.caption)
+                            .foregroundStyle(Club360Theme.captionOnGlass)
+                        Text(auth.session?.user.email ?? "-")
+                            .foregroundStyle(Club360Theme.cardTitle)
+                            .font(.body)
+                        Text("Email changes should use the secure auth flow.")
+                            .font(.footnote)
+                            .foregroundStyle(Club360Theme.captionOnGlass)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(16)
+                    .club360Glass(cornerRadius: 22)
+
                     if auth.session?.user.isAdminRole == true {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Coach profile preview")
+                                .font(.headline.weight(.semibold))
+                                .foregroundStyle(Club360Theme.cardTitle)
+
+                            Text(coachHeadlineDisplay)
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(Club360Theme.burgundy)
+
+                            Text("Specialties")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(Club360Theme.captionOnGlass)
+                            Text(coachSpecialtiesDisplay)
+                                .font(.footnote)
+                                .foregroundStyle(Club360Theme.cardTitle)
+
+                            Text("Availability")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(Club360Theme.captionOnGlass)
+                            Text(coachAvailabilityDisplay)
+                                .font(.footnote)
+                                .foregroundStyle(Club360Theme.cardTitle)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(16)
+                        .club360Glass(cornerRadius: 22)
+
                         VStack(alignment: .leading, spacing: 10) {
                             Text("Coach & admin access")
                                 .font(.headline.weight(.semibold))
@@ -124,6 +242,26 @@ struct UserProfileView: View {
         .navigationTitle("Profile")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+        .onAppear(perform: populateEditableFieldsFromSession)
+        .onChange(of: auth.session?.user.id.uuidString) { _, _ in
+            populateEditableFieldsFromSession()
+        }
+        .sheet(isPresented: $showAvatarEditor) {
+            if let pendingAvatarImage {
+                AvatarCropEditorView(
+                    image: pendingAvatarImage,
+                    onCancel: {
+                        showAvatarEditor = false
+                        pickerItem = nil
+                    },
+                    onUse: { cropped in
+                        showAvatarEditor = false
+                        pickerItem = nil
+                        Task { await uploadAvatarImage(cropped) }
+                    }
+                )
+            }
+        }
     }
 
     private var avatarView: some View {
@@ -165,6 +303,8 @@ struct UserProfileView: View {
     }
 
     private var displayName: String {
+        let full = "\(firstName.trimmingCharacters(in: .whitespacesAndNewlines)) \(lastName.trimmingCharacters(in: .whitespacesAndNewlines))".trimmingCharacters(in: .whitespacesAndNewlines)
+        if !full.isEmpty { return full }
         guard let meta = auth.session?.user.userMetadata else { return "Member" }
         if case let .string(name) = meta["name"], !name.isEmpty { return name }
         if let email = auth.session?.user.email, let local = email.split(separator: "@").first {
@@ -177,14 +317,38 @@ struct UserProfileView: View {
         auth.session?.user.isAdminRole == true ? "Admin" : "Client"
     }
 
-    private func uploadAvatar(from item: PhotosPickerItem?) async {
+    private var coachHeadlineDisplay: String {
+        let value = coachHeadline.trimmingCharacters(in: .whitespacesAndNewlines)
+        return value.isEmpty ? "Certified Coach" : value
+    }
+
+    private var coachSpecialtiesDisplay: String {
+        let value = coachSpecialties.trimmingCharacters(in: .whitespacesAndNewlines)
+        return value.isEmpty ? "Strength, nutrition, accountability" : value
+    }
+
+    private var coachAvailabilityDisplay: String {
+        let value = coachAvailability.trimmingCharacters(in: .whitespacesAndNewlines)
+        return value.isEmpty ? "Mon-Fri, 8am-6pm (local time)" : value
+    }
+
+    private func prepareAvatarForEditing(from item: PhotosPickerItem?) async {
         guard let item else { return }
         guard let raw = try? await item.loadTransferable(type: Data.self) else {
             uploadError = "Could not read the photo. Try another image."
             return
         }
-        guard let jpeg = Club360AvatarImageProcessing.jpegDataForAvatarUpload(raw) else {
+        guard let image = UIImage(data: raw) else {
             uploadError = "Could not use this image format. Try a photo from your library."
+            return
+        }
+        pendingAvatarImage = image
+        showAvatarEditor = true
+    }
+
+    private func uploadAvatarImage(_ image: UIImage) async {
+        guard let jpeg = Club360AvatarImageProcessing.jpegDataForAvatarUpload(image) else {
+            uploadError = "Could not process this photo. Try another image."
             return
         }
         guard let uid = auth.session?.user.id.uuidString else { return }
@@ -203,5 +367,65 @@ struct UserProfileView: View {
         } catch {
             uploadError = "Upload failed: \(error.localizedDescription)"
         }
+    }
+
+    private func removeAvatar() async {
+        isUploadingAvatar = true
+        uploadError = nil
+        defer { isUploadingAvatar = false }
+        do {
+            try await auth.updateUserMetadata([
+                "avatar_url": .null,
+                "picture": .null,
+            ])
+        } catch {
+            uploadError = "Could not remove photo: \(error.localizedDescription)"
+        }
+    }
+
+    private func saveProfileDetails() async {
+        isSavingProfile = true
+        profileMessage = nil
+        defer { isSavingProfile = false }
+        let trimmedFirst = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedLast = lastName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let mergedName = "\(trimmedFirst) \(trimmedLast)".trimmingCharacters(in: .whitespacesAndNewlines)
+        do {
+            try await auth.updateUserMetadata([
+                "first_name": .string(trimmedFirst),
+                "last_name": .string(trimmedLast),
+                "name": .string(mergedName),
+                "bio": .string(bio.trimmingCharacters(in: .whitespacesAndNewlines)),
+                "location": .string(location.trimmingCharacters(in: .whitespacesAndNewlines)),
+                "timezone": .string(timezone.trimmingCharacters(in: .whitespacesAndNewlines)),
+                "phone": .string(phone.trimmingCharacters(in: .whitespacesAndNewlines)),
+                "coach_headline": .string(coachHeadline.trimmingCharacters(in: .whitespacesAndNewlines)),
+                "coach_specialties": .string(coachSpecialties.trimmingCharacters(in: .whitespacesAndNewlines)),
+                "coach_availability": .string(coachAvailability.trimmingCharacters(in: .whitespacesAndNewlines)),
+            ])
+            profileMessage = "Profile details saved."
+        } catch {
+            profileMessage = error.localizedDescription
+        }
+    }
+
+    private func populateEditableFieldsFromSession() {
+        guard let meta = auth.session?.user.userMetadata else { return }
+        firstName = metadataString(meta, "first_name")
+        lastName = metadataString(meta, "last_name")
+        bio = metadataString(meta, "bio")
+        location = metadataString(meta, "location")
+        timezone = metadataString(meta, "timezone")
+        phone = metadataString(meta, "phone")
+        coachHeadline = metadataString(meta, "coach_headline")
+        coachSpecialties = metadataString(meta, "coach_specialties")
+        coachAvailability = metadataString(meta, "coach_availability")
+    }
+
+    private func metadataString(_ meta: [String: AnyJSON], _ key: String) -> String {
+        if case let .string(value) = meta[key] {
+            return value
+        }
+        return ""
     }
 }

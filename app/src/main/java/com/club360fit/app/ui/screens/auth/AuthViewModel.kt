@@ -131,7 +131,14 @@ class AuthViewModel : ViewModel() {
                 _uiState.update { it.copy(isLoading = false) }
                 onSuccess(isAdminResult)
             } catch (e: Exception) {
-                val message = e.message ?: "Authentication failed"
+                val raw = e.message ?: "Authentication failed"
+                val message =
+                    if (raw.contains("Database error saving new user", ignoreCase = true)) {
+                        raw +
+                            "\n\nThis is a Supabase database issue (not your form). Often a trigger on auth.users failed. Check Supabase → Logs → Postgres and triggers on auth.users."
+                    } else {
+                        raw
+                    }
                 _uiState.update { it.copy(isLoading = false, errorMessage = message) }
             }
         }

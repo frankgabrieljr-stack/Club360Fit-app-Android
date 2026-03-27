@@ -2,6 +2,7 @@ package com.club360fit.app.data
 
 import com.club360fit.app.BuildConfig
 import io.github.jan.supabase.createSupabaseClient
+import io.github.jan.supabase.functions.Functions
 import io.github.jan.supabase.gotrue.Auth
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.storage.Storage
@@ -29,6 +30,7 @@ object SupabaseClient {
             host = "reset"
         }
         install(Postgrest)
+        install(Functions)
         install(Storage)
     }
 }

@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.club360fit.app.data.ClientRepository
 import com.club360fit.app.data.AdherenceMetricsRepository
 import com.club360fit.app.data.AdherenceSnapshot
 import com.club360fit.app.data.DailyHabitLogDto
@@ -101,7 +102,12 @@ fun ClientProfileScreen(
     val scrollState = rememberScrollState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    
+
+    var transferTargetCoachId by remember(clientId) { mutableStateOf("") }
+    var transferBusy by remember { mutableStateOf(false) }
+    var transferError by remember { mutableStateOf<String?>(null) }
+    var showTransferConfirm by remember { mutableStateOf(false) }
+
     var workoutPlans by remember { mutableStateOf<List<WorkoutPlanDto>>(emptyList()) }
     var mealPlans by remember { mutableStateOf<List<MealPlanDto>>(emptyList()) }
     var progressCheckIns by remember { mutableStateOf<List<ProgressCheckInDto>>(emptyList()) }
@@ -289,6 +295,80 @@ fun ClientProfileScreen(
                     enabled = idForNav != null,
                     onClick = { idForNav?.let(onOpenPayments) }
                 )
+
+                if (clientId != null) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Transfer to another coach",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = BurgundyPrimary
+                    )
+                    Text(
+                        text = "Paste the other coach’s user ID (UUID from Supabase → Authentication → Users). You must be this member’s current coach.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = transferTargetCoachId,
+                        onValueChange = {
+                            transferTargetCoachId = it
+                            transferError = null
+                        },
+                        label = { Text("Target coach user UUID") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        enabled = !transferBusy
+                    )
+                    transferError?.let { err ->
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(err, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(
+                        onClick = { showTransferConfirm = true },
+                        enabled = !transferBusy && transferTargetCoachId.isNotBlank(),
+                        colors = ButtonDefaults.buttonColors(containerColor = BurgundyPrimary),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(if (transferBusy) "Transferring…" else "Transfer client")
+                    }
+                }
+
+                if (showTransferConfirm && clientId != null) {
+                    AlertDialog(
+                        onDismissRequest = { if (!transferBusy) showTransferConfirm = false },
+                        title = { Text("Transfer this client?") },
+                        text = { Text("You will no longer see this client in your list.") },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    scope.launch {
+                                        transferBusy = true
+                                        transferError = null
+                                        try {
+                                            ClientRepository.transferClientToCoach(clientId, transferTargetCoachId)
+                                            showTransferConfirm = false
+                                            onBack()
+                                        } catch (e: Exception) {
+                                            transferError = e.message ?: "Transfer failed"
+                                            showTransferConfirm = false
+                                        } finally {
+                                            transferBusy = false
+                                        }
+                                    }
+                                },
+                                enabled = !transferBusy
+                            ) { Text("Transfer") }
+                        },
+                        dismissButton = {
+                            TextButton(
+                                onClick = { showTransferConfirm = false },
+                                enabled = !transferBusy
+                            ) { Text("Cancel") }
+                        }
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(24.dp))
 

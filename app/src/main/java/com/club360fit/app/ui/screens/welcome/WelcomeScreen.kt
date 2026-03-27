@@ -65,19 +65,19 @@ fun WelcomeScreen(
         )
         Spacer(modifier = Modifier.height(48.dp))
         Button(
-            onClick = onCreateAccount,
+            onClick = onSignIn,
             modifier = Modifier.fillMaxWidth().height(56.dp),
             colors = ButtonDefaults.buttonColors(containerColor = BurgundyPrimary, contentColor = White)
         ) {
-            Text("Create account")
+            Text("Sign in")
         }
         Spacer(modifier = Modifier.height(16.dp))
         OutlinedButton(
-            onClick = onSignIn,
+            onClick = onCreateAccount,
             modifier = Modifier.fillMaxWidth().height(56.dp),
             colors = ButtonDefaults.outlinedButtonColors(contentColor = BurgundyPrimary)
         ) {
-            Text("Sign in")
+            Text("Create account")
         }
     }
 }

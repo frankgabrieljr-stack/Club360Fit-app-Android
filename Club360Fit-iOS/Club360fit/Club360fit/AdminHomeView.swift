@@ -153,10 +153,18 @@ struct AdminClientHubView: View {
     let clientId: String
     let displayTitle: String
 
+    @Environment(\.dismiss) private var dismiss
+
     @State private var homeModel = ClientHomeViewModel()
     @State private var roleBusy = false
     @State private var roleError: String?
     @State private var roleSuccess: String?
+    @State private var desiredCoachAccess = false
+    @State private var showApplyConfirm = false
+    @State private var transferTargetCoachId = ""
+    @State private var transferBusy = false
+    @State private var transferError: String?
+    @State private var showTransferConfirm = false
 
     var body: some View {
         Group {
@@ -243,53 +251,6 @@ struct AdminClientHubView: View {
                         }
                     }
                     .padding(.top, 4)
-
-                    if homeModel.memberAuthUserId != nil {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Account access")
-                                .font(.headline.weight(.semibold))
-                                .foregroundStyle(Club360Theme.cardTitle)
-                            Text(
-                                "Grant coach/admin access so they can use the Hub, or set member-only access. They must sign out and sign in again. Requires the set-user-role Edge Function deployed to your Supabase project."
-                            )
-                            .font(.footnote)
-                            .foregroundStyle(Club360Theme.captionOnGlass)
-                            .fixedSize(horizontal: false, vertical: true)
-
-                            if let roleSuccess {
-                                Text(roleSuccess)
-                                    .font(.footnote.weight(.medium))
-                                    .foregroundStyle(Club360Theme.burgundy)
-                            }
-                            if let roleError {
-                                Text(roleError)
-                                    .font(.footnote)
-                                    .foregroundStyle(.red)
-                            }
-
-                            VStack(spacing: 10) {
-                                Button {
-                                    Task { await applyMemberRole("admin") }
-                                } label: {
-                                    Text(roleBusy ? "Updating…" : "Grant coach / admin access")
-                                }
-                                .buttonStyle(Club360PrimaryGradientButtonStyle())
-                                .disabled(roleBusy)
-
-                                Button {
-                                    Task { await applyMemberRole("client") }
-                                } label: {
-                                    Text("Set to member access only")
-                                }
-                                .buttonStyle(.bordered)
-                                .tint(Club360Theme.burgundy)
-                                .disabled(roleBusy)
-                            }
-                        }
-                        .padding(16)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .club360Glass(cornerRadius: 22)
-                    }
 
                     VStack(alignment: .leading, spacing: 10) {
                         HStack(alignment: .center, spacing: 10) {
@@ -424,6 +385,19 @@ struct AdminClientHubView: View {
                                 accent: Club360Theme.purpleLight
                             )
                         }
+
+                        if homeModel.memberAuthUserId != nil {
+                            NavigationLink {
+                                clientSettingsView
+                            } label: {
+                                Club360HomeTile(
+                                    title: "Member settings",
+                                    subtitle: "Access and transfer",
+                                    systemImage: "slider.horizontal.3",
+                                    accent: Club360Theme.burgundy
+                                )
+                            }
+                        }
                     }
                 }
                 .padding(.horizontal, 18)
@@ -464,6 +438,128 @@ struct AdminClientHubView: View {
         }
     }
 
+    private var clientSettingsView: some View {
+        ZStack {
+            Club360ScreenBackground()
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Account access")
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(Club360Theme.cardTitle)
+                        Text(
+                            "Use the toggle, then tap Apply. Requires the set-user-role Edge Function deployed to your Supabase project. The member must sign out and sign in again."
+                        )
+                        .font(.footnote)
+                        .foregroundStyle(Club360Theme.captionOnGlass)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                        Toggle(isOn: $desiredCoachAccess) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Coach / admin access")
+                                    .foregroundStyle(Club360Theme.cardTitle)
+                                Text("Off = member-only access")
+                                    .font(.caption)
+                                    .foregroundStyle(Club360Theme.captionOnGlass)
+                            }
+                        }
+                        .tint(Club360Theme.burgundy)
+                        .disabled(roleBusy)
+
+                        if let roleSuccess {
+                            Text(roleSuccess)
+                                .font(.footnote.weight(.medium))
+                                .foregroundStyle(Club360Theme.burgundy)
+                        }
+                        if let roleError {
+                            Text(roleError)
+                                .font(.footnote)
+                                .foregroundStyle(.red)
+                        }
+
+                        Button {
+                            showApplyConfirm = true
+                        } label: {
+                            Text(roleBusy ? "Updating…" : "Apply")
+                        }
+                        .buttonStyle(Club360PrimaryGradientButtonStyle())
+                        .disabled(roleBusy)
+                        .confirmationDialog(
+                            desiredCoachAccess ? "Grant coach/admin access?" : "Set member-only access?",
+                            isPresented: $showApplyConfirm,
+                            titleVisibility: .visible
+                        ) {
+                            Button("Apply", role: .destructive) {
+                                Task { await applyMemberRole(desiredCoachAccess ? "admin" : "client") }
+                            }
+                            Button("Cancel", role: .cancel) {}
+                        } message: {
+                            Text(
+                                desiredCoachAccess
+                                    ? "This will let the member access the Hub after signing in again."
+                                    : "This will remove Hub access after signing in again."
+                            )
+                        }
+                    }
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .club360Glass(cornerRadius: 22)
+
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Transfer to another coach")
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(Club360Theme.cardTitle)
+                        Text(
+                            "Paste the other coach’s user ID (UUID from Supabase → Authentication → Users). You must be this member’s current coach. After transfer, you will no longer see them in your list."
+                        )
+                        .font(.footnote)
+                        .foregroundStyle(Club360Theme.captionOnGlass)
+                        .fixedSize(horizontal: false, vertical: true)
+                        TextField("Target coach user UUID", text: $transferTargetCoachId)
+                            .textContentType(.none)
+                            .autocorrectionDisabled()
+                            .foregroundStyle(Club360Theme.cardTitle)
+                        if let transferError {
+                            Text(transferError)
+                                .font(.footnote)
+                                .foregroundStyle(.red)
+                        }
+                        Button {
+                            showTransferConfirm = true
+                        } label: {
+                            Text(transferBusy ? "Transferring…" : "Transfer client")
+                        }
+                        .buttonStyle(Club360PrimaryGradientButtonStyle())
+                        .disabled(
+                            transferBusy
+                                || transferTargetCoachId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                        )
+                        .confirmationDialog(
+                            "Transfer this member to another coach?",
+                            isPresented: $showTransferConfirm,
+                            titleVisibility: .visible
+                        ) {
+                            Button("Transfer", role: .destructive) {
+                                Task { await runTransferClient() }
+                            }
+                            Button("Cancel", role: .cancel) {}
+                        } message: {
+                            Text("You will lose access to this client’s hub after transfer.")
+                        }
+                    }
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .club360Glass(cornerRadius: 22)
+                }
+                .padding(.horizontal, 18)
+                .padding(.vertical, 14)
+            }
+        }
+        .navigationTitle("Member settings")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+    }
+
     private func applyMemberRole(_ role: String) async {
         guard let uid = homeModel.memberAuthUserId else { return }
         roleBusy = true
@@ -478,6 +574,21 @@ struct AdminClientHubView: View {
                 : "Member access set. They will see the client app after signing in again."
         } catch {
             roleError = error.localizedDescription
+        }
+    }
+
+    private func runTransferClient() async {
+        transferBusy = true
+        transferError = nil
+        defer { transferBusy = false }
+        do {
+            try await ClientTransferService.transferClient(
+                clientId: clientId,
+                targetCoachUserId: transferTargetCoachId
+            )
+            dismiss()
+        } catch {
+            transferError = error.localizedDescription
         }
     }
 
