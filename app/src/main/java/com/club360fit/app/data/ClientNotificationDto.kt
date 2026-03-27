@@ -12,5 +12,9 @@ data class ClientNotificationDto(
     val body: String = "",
     @SerialName("dedupe_key") val dedupeKey: String? = null,
     @SerialName("read_at") val readAt: String? = null,
-    @SerialName("created_at") val createdAt: String? = null
+    @SerialName("created_at") val createdAt: String? = null,
+        @SerialName("ref_type") val refType: String? = null,
+    @SerialName("ref_id") val refId: String? = null,
+    @SerialName("visible_to_client") val visibleToClient: Boolean = true,
+    @SerialName("coach_read_at") val coachReadAt: String? = null
 )
