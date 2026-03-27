@@ -62,6 +62,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
@@ -72,6 +73,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
+import kotlinx.coroutines.launch
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.club360fit.app.ui.theme.BurgundyPrimary
@@ -96,6 +98,7 @@ fun UserProfileScreen(
     var pendingBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var showAvatarEditor by remember { mutableStateOf(false) }
     var firstName by remember { mutableStateOf("") }
+        val scope = rememberCoroutineScope()
     var lastName by remember { mutableStateOf("") }
     var bio by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("") }

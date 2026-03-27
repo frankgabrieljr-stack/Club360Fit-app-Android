@@ -16,8 +16,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -134,10 +134,24 @@ fun MyWorkoutsScreen(
                     trackColor = MaterialTheme.colorScheme.surfaceVariant
                 )
                 Text(
-                    "$weekLogged / $weekExpected sessions · ${(pct * 100).toInt()}%",
+                    "$weekLogged / $weekExpected sessions \u00b7 ${(pct * 100).toInt()}%",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+
+                // A2: Optional note to coach field
+                OutlinedTextField(
+                    value = workoutNoteForCoach,
+                    onValueChange = { workoutNoteForCoach = it },
+                    label = { Text("Optional note to coach") },
+                    placeholder = { Text("e.g. swapped squats due to knee pain") },
+                    supportingText = { Text("Sent to your coach with today's workout log.") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2,
+                    maxLines = 4,
+                    enabled = !isLogging
+                )
+
                 Button(
                     onClick = {
                         scope.launch {
@@ -146,7 +160,7 @@ fun MyWorkoutsScreen(
                                 WorkoutSessionLogRepository.logSession(
                                     clientId,
                                     today,
-                                    workoutNoteForCoach.takeIf { it.isNotBlank() }
+                                    workoutNoteForCoach.trim().ifBlank { null }
                                 )
                                 workoutNoteForCoach = ""
                                 refreshWeek()
@@ -168,25 +182,8 @@ fun MyWorkoutsScreen(
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(containerColor = BurgundyPrimary)
                 ) {
-                    Text(if (isLogging) "Saving…" else "Log a workout today")
+                    Text(if (isLogging) "Saving\u2026" else "Log a workout today")
                 }
-                OutlinedTextField(
-                    value = workoutNoteForCoach,
-                    onValueChange = { workoutNoteForCoach = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Optional note to coach") },
-                    placeholder = {
-                        Text("Example: I swapped squats for split squats due to knee pain.")
-                    },
-                    minLines = 2,
-                    maxLines = 4,
-                    enabled = !isLogging
-                )
-                Text(
-                    "Sent to your coach with today’s workout log.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
                 Spacer(Modifier.height(12.dp))
 
                 if (plans.isEmpty()) {
@@ -199,7 +196,7 @@ fun MyWorkoutsScreen(
                     plans.forEach { plan ->
                         Column(modifier = Modifier.fillMaxWidth()) {
                             Text(
-                                text = "Week of ${plan.weekStart.toDisplayDate()} – ${plan.title}",
+                                text = "Week of ${plan.weekStart.toDisplayDate()} \u2013 ${plan.title}",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = BurgundyPrimary
                             )
@@ -212,4 +209,3 @@ fun MyWorkoutsScreen(
         }
     }
 }
-

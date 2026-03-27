@@ -20,11 +20,11 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -60,15 +60,15 @@ fun ClientWorkoutsScreen(
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     var plans by remember { mutableStateOf<List<WorkoutPlanDto>>(emptyList()) }
+    var sessionLogs by remember { mutableStateOf<List<WorkoutSessionLogDto>>(emptyList()) }
     var showEditDialog by remember { mutableStateOf(false) }
     var editingId by remember { mutableStateOf<String?>(null) }
     var refreshKey by remember { mutableIntStateOf(0) }
-    val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-    var sessionLogs by remember { mutableStateOf<List<WorkoutSessionLogDto>>(emptyList()) }
     var replyTargetId by remember { mutableStateOf<String?>(null) }
     var replyDraft by remember { mutableStateOf("") }
     var replyBusy by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(clientId, refreshKey) {
         isLoading = true
@@ -78,7 +78,7 @@ fun ClientWorkoutsScreen(
             val weekStart = WorkoutSessionLogRepository.weekStartSunday(LocalDate.now())
             sessionLogs = WorkoutSessionLogRepository.listForWeek(clientId, weekStart)
         } catch (e: Exception) {
-            error = e.message ?: "Failed to load workout plans"
+            error = e.message ?: "Failed to load workout data"
         } finally {
             isLoading = false
         }
@@ -130,7 +130,7 @@ fun ClientWorkoutsScreen(
                             .padding(vertical = 8.dp)
                     ) {
                         Text(
-                            text = "Week of ${plan.weekStart.toDisplayDate()} – ${plan.title}",
+                            text = "Week of ${plan.weekStart.toDisplayDate()} \u2013 ${plan.title}",
                             style = MaterialTheme.typography.titleMedium,
                             color = BurgundyPrimary
                         )
@@ -140,19 +140,15 @@ fun ClientWorkoutsScreen(
                             style = MaterialTheme.typography.bodyMedium
                         )
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                            TextButton(onClick = {
-                                editingId = plan.id
-                                showEditDialog = true
-                            }) { Text("Edit", color = BurgundyPrimary) }
+                            TextButton(onClick = { editingId = plan.id; showEditDialog = true }) {
+                                Text("Edit", color = BurgundyPrimary)
+                            }
                         }
                     }
                 }
 
                 Button(
-                    onClick = {
-                        editingId = null
-                        showEditDialog = true
-                    },
+                    onClick = { editingId = null; showEditDialog = true },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = BurgundyPrimary.copy(alpha = 0.1f),
@@ -233,15 +229,8 @@ fun ClientWorkoutsScreen(
             clientId = clientId,
             editingPlanId = editingId,
             isWorkout = true,
-            onDismiss = {
-                showEditDialog = false
-                editingId = null
-            },
-            onSaved = {
-                showEditDialog = false
-                editingId = null
-                refreshKey++
-            },
+            onDismiss = { showEditDialog = false; editingId = null },
+            onSaved = { showEditDialog = false; editingId = null; refreshKey++ },
             onSubmitResult = { success, message ->
                 scope.launch {
                     snackbarHostState.showSnackbar(
@@ -304,4 +293,3 @@ fun ClientWorkoutsScreen(
         )
     }
 }
-

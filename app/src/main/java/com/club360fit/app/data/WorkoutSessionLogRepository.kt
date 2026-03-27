@@ -131,4 +131,16 @@ object WorkoutSessionLogRepository {
                 }
                 .decodeList<WorkoutSessionLogDto>()
         }
+
+    /** Fetch recent session logs for a client (coach view). */
+    suspend fun fetchForClient(clientId: String, limit: Int = 20): List<WorkoutSessionLogDto> =
+        withContext(Dispatchers.IO) {
+            client.postgrest["workout_session_logs"]
+                .select {
+                    filter { eq("client_id", clientId) }
+                    order("session_date", order = Order.DESCENDING)
+                    limit(limit.toLong())
+                }
+                .decodeList<WorkoutSessionLogDto>()
+        }
 }

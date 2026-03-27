@@ -60,7 +60,6 @@ Deno.serve(async (req: Request) => {
 
     const prev = existing.user.user_metadata ?? {};
     const merged = { ...prev, role: newRole };
-
     const { error: upErr } = await adminClient.auth.admin.updateUserById(targetId, {
       user_metadata: merged as Record<string, unknown>,
     });
@@ -68,31 +67,35 @@ Deno.serve(async (req: Request) => {
       return json(500, { error: upErr.message });
     }
 
-    // Keep `public.profiles.role` aligned with Auth (app may query PostgREST; JWT still drives routing).
-    const meta = merged as Record<string, unknown>;
-    const prevMeta = existing.user.user_metadata as Record<string, unknown> | null;
-    const fullName =
-      (typeof meta.name === "string" ? meta.name : null) ??
-      (typeof meta.first_name === "string" || typeof meta.last_name === "string"
-        ? [meta.first_name, meta.last_name].filter((x): x is string => typeof x === "string").join(" ").trim() || null
-        : null) ??
-      (typeof prevMeta?.name === "string" ? prevMeta.name : null);
-    const avatarFromMeta =
-      (typeof meta.avatar_url === "string" ? meta.avatar_url : null) ??
-      (typeof prevMeta?.avatar_url === "string" ? prevMeta.avatar_url : null);
-    const { error: profileErr } = await adminClient.from("profiles").upsert(
-      {
-        id: targetId,
-        email: existing.user.email ?? null,
-        full_name: fullName ?? "",
-        avatar_url: avatarFromMeta,
-        role: newRole,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "id" },
-    );
-    if (profileErr) {
-      console.warn("set-user-role: profiles sync:", profileErr.message);
+    try {
+      // Keep `public.profiles.role` aligned with Auth (app may query PostgREST; JWT still drives routing).
+      const meta = merged as Record<string, unknown>;
+      const prevMeta = existing.user.user_metadata as Record<string, unknown> | null;
+      const fullName =
+        (typeof meta.name === "string" ? meta.name : null) ??
+        (typeof meta.first_name === "string" || typeof meta.last_name === "string"
+          ? [meta.first_name, meta.last_name].filter((x): x is string => typeof x === "string").join(" ").trim() || null
+          : null) ??
+        (typeof prevMeta?.name === "string" ? prevMeta.name : null);
+      const avatarFromMeta =
+        (typeof meta.avatar_url === "string" ? meta.avatar_url : null) ??
+        (typeof prevMeta?.avatar_url === "string" ? prevMeta.avatar_url : null);
+      const { error: profileErr } = await adminClient.from("profiles").upsert(
+        {
+          id: targetId,
+          email: existing.user.email ?? null,
+          full_name: fullName ?? "",
+          avatar_url: avatarFromMeta,
+          role: newRole,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "id" },
+      );
+      if (profileErr) {
+        console.warn("set-user-role: profiles sync:", profileErr.message);
+      }
+    } catch (profileUpdateErr) {
+      console.warn("set-user-role: profiles sync error:", profileUpdateErr);
     }
 
     return json(200, { ok: true });
