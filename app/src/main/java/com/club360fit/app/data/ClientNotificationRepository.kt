@@ -4,6 +4,7 @@ import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.time.Instant
 
 object ClientNotificationRepository {
     private val client = SupabaseClient.client
@@ -21,6 +22,30 @@ object ClientNotificationRepository {
 
     suspend fun unreadCount(clientId: String): Int = withContext(Dispatchers.IO) {
         listRecent(clientId, 100).count { it.readAt == null }
+    }
+
+    /** All notifications visible to the signed-in coach (newest first). Matches iOS `fetchNotificationsForCoach`. */
+    suspend fun listForCoach(limit: Int = 80): List<ClientNotificationDto> =
+        withContext(Dispatchers.IO) {
+            client.postgrest["client_notifications"]
+                .select {
+                    order("created_at", order = Order.DESCENDING)
+                    limit(limit.toLong())
+                }
+                .decodeList<ClientNotificationDto>()
+        }
+
+    suspend fun coachUnreadCount(): Int = withContext(Dispatchers.IO) {
+        listForCoach(400).count { it.coachReadAt == null }
+    }
+
+    suspend fun markCoachReadAsCoach(notificationId: String) = withContext(Dispatchers.IO) {
+        val now = Instant.now().toString()
+        client.postgrest["client_notifications"].update(
+            { set("coach_read_at", now) }
+        ) {
+            filter { eq("id", notificationId) }
+        }
     }
 
     suspend fun markRead(notificationId: String) = withContext(Dispatchers.IO) {
@@ -59,5 +84,53 @@ object ClientNotificationRepository {
         } catch (_: Exception) {
             /* duplicate dedupe or network */
         }
+    }
+
+    /** Coach-facing alert: hidden from member `Updates` (`visible_to_client` = false). Aligns with iOS `notifyCoachAboutClient`. */
+    suspend fun notifyCoachAboutClient(
+        clientId: String,
+        kind: String,
+        title: String,
+        body: String,
+        refType: String? = null,
+        refId: String? = null,
+        dedupeKey: String? = null
+    ) {
+        tryInsert(
+            ClientNotificationDto(
+                clientId = clientId,
+                kind = kind,
+                title = title,
+                body = body,
+                refType = refType,
+                refId = refId,
+                dedupeKey = dedupeKey,
+                visibleToClient = false
+            )
+        )
+    }
+
+    /** Member-visible notification (`visible_to_client` = true). Aligns with iOS `notifyMemberFromCoach`. */
+    suspend fun notifyMemberFromCoach(
+        clientId: String,
+        kind: String,
+        title: String,
+        body: String,
+        refType: String? = null,
+        refId: String? = null,
+        dedupeKey: String? = null
+    ) {
+        tryInsert(
+            ClientNotificationDto(
+                clientId = clientId,
+                kind = kind,
+                title = title,
+                body = body,
+                refType = refType,
+                refId = refId,
+                dedupeKey = dedupeKey,
+                visibleToClient = true
+            )
+        )
     }
 }

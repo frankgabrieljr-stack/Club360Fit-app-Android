@@ -93,6 +93,7 @@ object MealPhotoRepository {
                         kind = "meal_feedback",
                         title = "Coach feedback on your meal photo",
                         body = trimmed.take(500),
+                        visibleToClient = true
                     )
                 )
             }

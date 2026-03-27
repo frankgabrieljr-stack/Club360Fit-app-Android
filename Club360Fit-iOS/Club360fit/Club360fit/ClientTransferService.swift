@@ -24,9 +24,10 @@ enum ClientTransferService {
             throw NSError(domain: "Club360Fit", code: 400, userInfo: [NSLocalizedDescriptionKey: "Enter the other coach’s user ID (UUID)."])
         }
         let payload = TransferClientPayload(client_id: cid, target_coach_user_id: tid)
+        let options = try await Club360FitSupabase.functionInvokeOptions(body: payload)
         let response: TransferClientResponse = try await Club360FitSupabase.shared.functions.invoke(
             "transfer-client",
-            options: FunctionInvokeOptions(body: payload)
+            options: options
         )
         if response.ok != true {
             let msg = response.error ?? "Transfer failed. Deploy the transfer-client Edge Function in Supabase."

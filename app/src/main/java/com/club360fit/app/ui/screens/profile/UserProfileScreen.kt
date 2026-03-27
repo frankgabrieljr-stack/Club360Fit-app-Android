@@ -57,6 +57,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -77,6 +78,7 @@ import com.club360fit.app.ui.theme.BurgundyPrimary
 import com.club360fit.app.ui.utils.SubmitResultMessages
 import com.club360fit.app.ui.theme.OnBurgundy
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -84,10 +86,12 @@ fun UserProfileScreen(
     onBack: () -> Unit,
     onEditProfile: () -> Unit,
     onSignOut: () -> Unit,
+    showTopBarBack: Boolean = true,
     viewModel: UserProfileViewModel = viewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
     val context = LocalContext.current
     var pendingBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var showAvatarEditor by remember { mutableStateOf(false) }
@@ -148,14 +152,18 @@ fun UserProfileScreen(
     val pickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri: Uri? ->
-        uri?.let {
-            val bmp = decodeBitmapFromUri(context, it)
-            if (bmp == null) {
-                viewModel.loadProfile()
-            } else {
-                pendingBitmap = bmp
-                showAvatarEditor = true
+        if (uri == null) return@rememberLauncherForActivityResult
+        val bmp = decodeBitmapFromUri(context, uri)
+        if (bmp == null) {
+            scope.launch {
+                snackbarHostState.showSnackbar(
+                    "Unable to load photo. Please try another image.",
+                    duration = SnackbarDuration.Long
+                )
             }
+        } else {
+            pendingBitmap = bmp
+            showAvatarEditor = true
         }
     }
 
@@ -165,12 +173,14 @@ fun UserProfileScreen(
             TopAppBar(
                 title = { Text("My Profile") },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = BurgundyPrimary
-                        )
+                    if (showTopBarBack) {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back",
+                                tint = BurgundyPrimary
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

@@ -15,6 +15,10 @@ struct MyNotificationsView: View {
     @Environment(\.clientTabRouter) private var tabRouter
     @Environment(\.dismiss) private var dismiss
     @State private var model = MyNotificationsViewModel()
+    @State private var replyTarget: ClientNotificationDTO?
+    @State private var replyText = ""
+    @State private var replyError: String?
+    @State private var showReplyError = false
 
     var body: some View {
         Group {
@@ -47,6 +51,23 @@ struct MyNotificationsView: View {
             guard let cid = home.clientId else { return }
             await model.load(clientId: cid, showLoading: false)
         }
+        .alert("Reply to workout note", isPresented: replySheetPresented) {
+            TextField("Write your reply", text: $replyText, axis: .vertical)
+            Button("Send") {
+                Task { await sendReply() }
+            }
+            Button("Cancel", role: .cancel) {
+                replyTarget = nil
+                replyText = ""
+            }
+        } message: {
+            Text("This sends a timestamped reply to the member.")
+        }
+        .alert("Could not send reply", isPresented: $showReplyError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(replyError ?? "Please try again.")
+        }
     }
 
     private var listBody: some View {
@@ -70,6 +91,15 @@ struct MyNotificationsView: View {
                                 .listRowSeparator(.hidden)
                                 .listRowBackground(Color.clear)
                                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                    if inbox == .coach, canReply(to: n) {
+                                        Button {
+                                            replyTarget = n
+                                            replyText = ""
+                                        } label: {
+                                            Label("Reply", systemImage: "arrowshape.turn.up.left")
+                                        }
+                                        .tint(Club360Theme.tealDark)
+                                    }
                                     Button(role: .destructive) {
                                         Task { await deleteNotification(n) }
                                     } label: {
@@ -89,6 +119,36 @@ struct MyNotificationsView: View {
         guard let id = n.rowId, let cid = home.clientId else { return }
         await model.deleteNotification(notificationId: id, clientId: cid)
         await home.reloadNotificationsCount()
+    }
+
+    private var replySheetPresented: Binding<Bool> {
+        Binding(
+            get: { replyTarget != nil },
+            set: { if !$0 { replyTarget = nil } }
+        )
+    }
+
+    private func canReply(to n: ClientNotificationDTO) -> Bool {
+        (n.kind ?? "").lowercased() == "workout_session_logged"
+    }
+
+    private func sendReply() async {
+        guard let target = replyTarget else { return }
+        do {
+            try await ClientDataService.replyToWorkoutSessionNote(
+                clientId: target.clientId,
+                workoutSessionLogId: target.refId,
+                replyText: replyText
+            )
+            replyTarget = nil
+            replyText = ""
+            guard let cid = home.clientId else { return }
+            await model.load(clientId: cid, showLoading: false)
+            await home.reloadNotificationsCount()
+        } catch {
+            replyError = error.localizedDescription
+            showReplyError = true
+        }
     }
 
     private func notificationCard(_ n: ClientNotificationDTO) -> some View {

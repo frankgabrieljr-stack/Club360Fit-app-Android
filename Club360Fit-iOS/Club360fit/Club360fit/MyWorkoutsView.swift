@@ -8,6 +8,7 @@ struct MyWorkoutsView: View {
     @State private var showIntroHelp = false
     @State private var showThisWeekHelp = false
     @State private var expandedPlanHelp: Set<String> = []
+    @State private var workoutNoteForCoach = ""
 
     var body: some View {
         Group {
@@ -104,7 +105,8 @@ struct MyWorkoutsView: View {
                     Button {
                         Task {
                             guard let cid = home.clientId else { return }
-                            await model.logToday(clientId: cid)
+                            await model.logToday(clientId: cid, noteToCoach: workoutNoteForCoach)
+                            workoutNoteForCoach = ""
                         }
                     } label: {
                         Text(model.isLogging ? "Saving…" : "Log a workout today")
@@ -112,6 +114,25 @@ struct MyWorkoutsView: View {
                     .buttonStyle(Club360PrimaryGradientButtonStyle())
                     .disabled(model.isLogging || home.clientId == nil)
                     .opacity(model.isLogging ? 0.7 : 1)
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Optional note to coach")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Club360Theme.cardTitle)
+                        TextField(
+                            "Example: I swapped squats for split squats due to knee pain.",
+                            text: $workoutNoteForCoach,
+                            axis: .vertical
+                        )
+                        .lineLimit(2 ... 4)
+                        .textFieldStyle(.roundedBorder)
+                        Text("Sent to your coach with today’s workout log.")
+                            .font(.caption)
+                            .foregroundStyle(Club360Theme.captionOnGlass)
+                    }
+                    .padding(14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .club360Glass(cornerRadius: 20)
 
                     if let toast = model.toast {
                         Text(toast)
@@ -236,10 +257,14 @@ private final class MyWorkoutsViewModel {
         } catch {}
     }
 
-    func logToday(clientId: String) async {
+    func logToday(clientId: String, noteToCoach: String) async {
         isLogging = true
         defer { isLogging = false }
-        await ClientDataService.logWorkoutSession(clientId: clientId, sessionDate: Date())
+        await ClientDataService.logWorkoutSession(
+            clientId: clientId,
+            sessionDate: Date(),
+            noteToCoach: noteToCoach
+        )
         await refreshWeek(clientId: clientId)
         toast = "Workout logged."
         Task {

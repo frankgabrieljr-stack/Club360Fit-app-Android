@@ -16,6 +16,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -61,6 +62,7 @@ fun MyWorkoutsScreen(
     var weekLogged by remember { mutableStateOf(0) }
     var weekExpected by remember { mutableStateOf(4) }
     var isLogging by remember { mutableStateOf(false) }
+    var workoutNoteForCoach by remember { mutableStateOf("") }
     val today = LocalDate.now()
     val weekStart = AdherenceMetricsCalculator.weekStartSunday(today)
 
@@ -141,7 +143,12 @@ fun MyWorkoutsScreen(
                         scope.launch {
                             isLogging = true
                             try {
-                                WorkoutSessionLogRepository.logSession(clientId, today)
+                                WorkoutSessionLogRepository.logSession(
+                                    clientId,
+                                    today,
+                                    workoutNoteForCoach.takeIf { it.isNotBlank() }
+                                )
+                                workoutNoteForCoach = ""
                                 refreshWeek()
                                 snackbarHostState.showSnackbar(
                                     SubmitResultMessages.LOGGED_SUCCESS,
@@ -163,6 +170,23 @@ fun MyWorkoutsScreen(
                 ) {
                     Text(if (isLogging) "Saving…" else "Log a workout today")
                 }
+                OutlinedTextField(
+                    value = workoutNoteForCoach,
+                    onValueChange = { workoutNoteForCoach = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Optional note to coach") },
+                    placeholder = {
+                        Text("Example: I swapped squats for split squats due to knee pain.")
+                    },
+                    minLines = 2,
+                    maxLines = 4,
+                    enabled = !isLogging
+                )
+                Text(
+                    "Sent to your coach with today’s workout log.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 Spacer(Modifier.height(12.dp))
 
                 if (plans.isEmpty()) {

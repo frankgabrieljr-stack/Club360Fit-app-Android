@@ -19,4 +19,14 @@ enum Club360FitSupabase: Sendable {
     static func handleAuthRedirectURL(_ url: URL) {
         shared.auth.handle(url)
     }
+
+    /// Options for Edge Functions that call `getUser()` with the caller’s JWT (`set-user-role`, `transfer-client`, etc.).
+    /// Ensures `Authorization` is the signed-in user’s access token, not only the anon key.
+    static func functionInvokeOptions<T: Encodable>(body: T) async throws -> FunctionInvokeOptions {
+        let session = try await shared.auth.session
+        return FunctionInvokeOptions(
+            headers: ["Authorization": "Bearer \(session.accessToken)"],
+            body: body
+        )
+    }
 }

@@ -12,17 +12,86 @@ object WorkoutSessionLogRepository {
 
     fun weekStartSunday(d: LocalDate): LocalDate = d.with(DayOfWeek.SUNDAY)
 
-    suspend fun logSession(clientId: String, sessionDate: LocalDate) = withContext(Dispatchers.IO) {
+    suspend fun logSession(
+        clientId: String,
+        sessionDate: LocalDate,
+        noteToCoach: String? = null
+    ) = withContext(Dispatchers.IO) {
+        val trimmed = noteToCoach?.trim().orEmpty()
+        val note = when {
+            trimmed.isEmpty() -> null
+            trimmed.length > 1000 -> trimmed.take(1000)
+            else -> trimmed
+        }
         val row = WorkoutSessionLogDto(
             clientId = clientId,
             sessionDate = sessionDate,
-            weekStart = weekStartSunday(sessionDate)
+            weekStart = weekStartSunday(sessionDate),
+            noteToCoach = note
         )
         try {
             client.postgrest["workout_session_logs"].insert(row)
+            val logged = client.postgrest["workout_session_logs"]
+                .select {
+                    filter {
+                        eq("client_id", clientId)
+                        eq("session_date", sessionDate.toString())
+                    }
+                    limit(1)
+                }
+                .decodeList<WorkoutSessionLogDto>()
+                .firstOrNull()
+            val day = sessionDate.toString()
+            val body = if (note.isNullOrEmpty()) {
+                "Member logged a session for $day."
+            } else {
+                "Member logged a session for $day. Note: ${note.take(500)}"
+            }
+            ClientNotificationRepository.notifyCoachAboutClient(
+                clientId = clientId,
+                kind = "workout_session_logged",
+                title = "Workout session logged",
+                body = body,
+                refType = "workout_session",
+                refId = logged?.id
+            )
         } catch (_: Exception) {
             /* duplicate day */
         }
+    }
+
+    /** Coach/admin: reply to member workout note; updates `workout_session_logs` and notifies the member. */
+    suspend fun replyToWorkoutNote(
+        clientId: String,
+        workoutSessionLogId: String?,
+        replyText: String
+    ) = withContext(Dispatchers.IO) {
+        val trimmed = replyText.trim()
+        if (trimmed.isEmpty()) return@withContext
+        val preview = trimmed.take(1000)
+        val now = java.time.Instant.now().toString()
+        val logId = workoutSessionLogId?.trim()?.takeIf { it.isNotEmpty() }
+        if (logId != null) {
+            client.postgrest["workout_session_logs"].update(
+                {
+                    set("coach_reply", preview)
+                    set("coach_replied_at", now)
+                }
+            ) {
+                filter {
+                    eq("id", logId)
+                    eq("client_id", clientId)
+                }
+            }
+        }
+        ClientNotificationRepository.notifyMemberFromCoach(
+            clientId = clientId,
+            kind = "workout_session_reply",
+            title = "Coach reply to your workout note",
+            body = preview,
+            refType = "workout_session",
+            refId = logId
+        )
     }
 
     suspend fun hasSessionOn(clientId: String, date: LocalDate): Boolean = withContext(Dispatchers.IO) {

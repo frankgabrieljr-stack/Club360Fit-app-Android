@@ -23,9 +23,10 @@ enum AdminRoleService {
             throw NSError(domain: "Club360Fit", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid role."])
         }
         let payload = SetUserRolePayload(target_user_id: trimmed.lowercased(), role: role)
+        let options = try await Club360FitSupabase.functionInvokeOptions(body: payload)
         let response: SetUserRoleResponse = try await Club360FitSupabase.shared.functions.invoke(
             "set-user-role",
-            options: FunctionInvokeOptions(body: payload)
+            options: options
         )
         if response.ok != true {
             let msg = response.error ?? "Could not update role. Deploy the set-user-role Edge Function in Supabase."

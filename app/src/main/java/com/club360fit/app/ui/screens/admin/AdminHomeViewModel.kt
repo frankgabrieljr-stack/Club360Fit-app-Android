@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.club360fit.app.data.ClientDto
 import com.club360fit.app.data.ClientRepository
+import com.club360fit.app.data.ClientNotificationRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,8 +20,18 @@ class AdminHomeViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(AdminHomeUiState())
     val uiState: StateFlow<AdminHomeUiState> = _uiState.asStateFlow()
 
+    private val _coachUnreadCount = MutableStateFlow(0)
+    val coachUnreadCount: StateFlow<Int> = _coachUnreadCount.asStateFlow()
+
     init {
         loadClients()
+    }
+
+    fun refreshCoachUnread() {
+        viewModelScope.launch {
+            _coachUnreadCount.value = runCatching { ClientNotificationRepository.coachUnreadCount() }
+                .getOrDefault(0)
+        }
     }
 
     fun loadClients() {
@@ -29,6 +40,7 @@ class AdminHomeViewModel : ViewModel() {
             try {
                 val clients = ClientRepository.getClients()
                 _uiState.value = AdminHomeUiState(clients = clients, isLoading = false)
+                refreshCoachUnread()
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,

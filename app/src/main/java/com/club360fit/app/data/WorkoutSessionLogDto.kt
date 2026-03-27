@@ -12,5 +12,8 @@ data class WorkoutSessionLogDto(
     @SerialName("session_date") val sessionDate: LocalDate,
     @Serializable(with = LocalDateSerializer::class)
     @SerialName("week_start") val weekStart: LocalDate,
+    @SerialName("note_to_coach") val noteToCoach: String? = null,
+    @SerialName("coach_reply") val coachReply: String? = null,
+    @SerialName("coach_replied_at") val coachRepliedAt: String? = null,
     @SerialName("created_at") val createdAt: String? = null
 )

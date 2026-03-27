@@ -9,6 +9,7 @@ object Routes {
     const val CREATE_ACCOUNT = "create_account"
     const val CLIENT_HOME = "client_home"
     const val ADMIN_HOME = "admin_home"
+    const val COACH_HUB_NOTIFICATIONS = "coach_hub_notifications"
     const val CLIENT_DETAIL = "client_detail"
     const val CLIENT_PROFILE = "client_profile"
     const val CLIENT_WORKOUTS = "client_workouts"

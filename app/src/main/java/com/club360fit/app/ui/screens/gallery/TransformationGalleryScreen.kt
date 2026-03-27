@@ -64,6 +64,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 fun TransformationGalleryScreen(
     onBack: () -> Unit,
+    showTopBarBack: Boolean = true,
     viewModel: TransformationGalleryViewModel = viewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -123,12 +124,14 @@ fun TransformationGalleryScreen(
             TopAppBar(
                 title = { Text("Transformation Gallery") },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = BurgundyPrimary
-                        )
+                    if (showTopBarBack) {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back",
+                                tint = BurgundyPrimary
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

@@ -24,6 +24,7 @@ struct UserProfileView: View {
     @State private var profileMessage: String?
     @State private var isUploadingAvatar = false
     @State private var uploadError: String?
+    @State private var showUploadErrorAlert = false
 
     var body: some View {
         ZStack {
@@ -262,6 +263,11 @@ struct UserProfileView: View {
                 )
             }
         }
+        .alert("Photo upload issue", isPresented: $showUploadErrorAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(uploadError ?? "Could not process your photo.")
+        }
     }
 
     private var avatarView: some View {
@@ -334,12 +340,17 @@ struct UserProfileView: View {
 
     private func prepareAvatarForEditing(from item: PhotosPickerItem?) async {
         guard let item else { return }
+        // Reset immediately so selecting the same image again still triggers this flow.
+        pickerItem = nil
+        uploadError = nil
         guard let raw = try? await item.loadTransferable(type: Data.self) else {
             uploadError = "Could not read the photo. Try another image."
+            showUploadErrorAlert = true
             return
         }
         guard let image = UIImage(data: raw) else {
             uploadError = "Could not use this image format. Try a photo from your library."
+            showUploadErrorAlert = true
             return
         }
         pendingAvatarImage = image
@@ -349,6 +360,7 @@ struct UserProfileView: View {
     private func uploadAvatarImage(_ image: UIImage) async {
         guard let jpeg = Club360AvatarImageProcessing.jpegDataForAvatarUpload(image) else {
             uploadError = "Could not process this photo. Try another image."
+            showUploadErrorAlert = true
             return
         }
         guard let uid = auth.session?.user.id.uuidString else { return }
@@ -361,11 +373,13 @@ struct UserProfileView: View {
                 try await auth.updateUserMetadata(["avatar_url": .string(url.absoluteString)])
             } catch {
                 uploadError = "Saved photo, but profile update failed: \(error.localizedDescription)"
+                showUploadErrorAlert = true
                 return
             }
             pickerItem = nil
         } catch {
             uploadError = "Upload failed: \(error.localizedDescription)"
+            showUploadErrorAlert = true
         }
     }
 
@@ -380,6 +394,7 @@ struct UserProfileView: View {
             ])
         } catch {
             uploadError = "Could not remove photo: \(error.localizedDescription)"
+            showUploadErrorAlert = true
         }
     }
 

@@ -1,7 +1,9 @@
 package com.club360fit.app.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -19,6 +21,8 @@ import com.club360fit.app.ui.screens.client.MyProgressScreen
 import com.club360fit.app.ui.screens.client.MyScheduleScreen
 import com.club360fit.app.ui.screens.client.MyWorkoutsScreen
 import com.club360fit.app.ui.screens.admin.AdminHomeScreen
+import com.club360fit.app.ui.screens.admin.AdminHomeViewModel
+import com.club360fit.app.ui.screens.admin.CoachHubNotificationsScreen
 import com.club360fit.app.ui.screens.admin.ClientDetailScreen
 import com.club360fit.app.ui.screens.admin.ClientProfileScreen
 import com.club360fit.app.ui.screens.admin.ClientMealsScreen
@@ -131,14 +135,34 @@ fun Club360FitNavHost(startDestination: String = Routes.WELCOME) {
         }
         composable(Routes.ADMIN_HOME) {
             AdminHomeScreen(
-                onOpenProfile = { navController.navigate(Routes.MY_PROFILE) },
+                onOpenCoachNotifications = { navController.navigate(Routes.COACH_HUB_NOTIFICATIONS) },
                 onOpenClientDetails = { clientId ->
                     navController.navigate("${Routes.CLIENT_DETAIL}/$clientId")
                 },
                 onOpenClientProfile = { clientId ->
                     navController.navigate("${Routes.CLIENT_PROFILE}/${clientId ?: "new"}")
                 },
-                onOpenGallery = { navController.navigate(Routes.TRANSFORMATION_GALLERY) }
+                onOpenClientHub = { clientId ->
+                    navController.navigate("${Routes.CLIENT_DETAIL}/$clientId")
+                },
+                onSignOut = {
+                    scope.launch {
+                        SupabaseClient.client.auth.signOut()
+                        navController.navigate(Routes.WELCOME) {
+                            popUpTo(Routes.WELCOME) { inclusive = true }
+                        }
+                    }
+                }
+            )
+        }
+        composable(Routes.COACH_HUB_NOTIFICATIONS) { backStackEntry ->
+            val parentEntry = remember(backStackEntry) {
+                navController.getBackStackEntry(Routes.ADMIN_HOME)
+            }
+            val adminVm: AdminHomeViewModel = viewModel(parentEntry)
+            CoachHubNotificationsScreen(
+                onBack = { navController.popBackStack() },
+                onUnreadChanged = { adminVm.refreshCoachUnread() }
             )
         }
         composable("${Routes.CLIENT_DETAIL}/{clientId}") { backStackEntry ->
