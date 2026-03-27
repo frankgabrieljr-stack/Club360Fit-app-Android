@@ -34,3 +34,6 @@ Thumbs.db
 # Release bundles
 app/release/
 
+
+# Local iOS-only repo clone (do not commit)
+Club360Fit-iOS-mirror/
