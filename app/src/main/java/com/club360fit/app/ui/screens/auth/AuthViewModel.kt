@@ -115,7 +115,9 @@ class AuthViewModel : ViewModel() {
                                 put("food_restrictions", JsonPrimitive(state.foodRestrictions))
                                 put("meals_per_day", JsonPrimitive(state.mealsPerDay))
                                 put("workout_frequency", JsonPrimitive(state.workoutFrequency))
+                                // Backward/forward compatible: some DB triggers expect `goal`, older ones used `overall_goal`.
                                 put("overall_goal", JsonPrimitive(state.overallGoal))
+                                put("goal", JsonPrimitive(state.overallGoal))
                                 // Coach/admin is assigned in Supabase (Auth → Users → metadata), not from the app.
                                 put("role", JsonPrimitive("client"))
                             }
