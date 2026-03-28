@@ -65,6 +65,7 @@ fun AdminHomeScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
     var selectedTab by remember { mutableIntStateOf(0) }
     var hubShowSchedule by remember { mutableStateOf(false) }
+    var showCoachDirectory by remember { mutableStateOf(false) }
 
     LaunchedEffect(selectedTab) {
         if (selectedTab != 0) hubShowSchedule = false
@@ -86,6 +87,7 @@ fun AdminHomeScreen(
         unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
     )
 
+    Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
         floatingActionButton = {
             if (selectedTab == 1) {
@@ -293,11 +295,19 @@ fun AdminHomeScreen(
                         onBack = {},
                         onEditProfile = {},
                         onSignOut = onSignOut,
-                        showTopBarBack = false
+                        showTopBarBack = false,
+                        onOpenCoachDirectory = { showCoachDirectory = true }
                     )
                 }
             }
         }
+    }
+    if (showCoachDirectory) {
+        CoachDirectoryScreen(
+            onBack = { showCoachDirectory = false },
+            modifier = Modifier.fillMaxSize()
+        )
+    }
     }
 }
 

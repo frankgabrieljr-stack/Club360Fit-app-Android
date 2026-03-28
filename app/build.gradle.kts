@@ -24,8 +24,16 @@ android {
         applicationId = "com.club360fit.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 4
-        versionName = "1.2.1"
+        versionCode = 5
+        versionName = "1.2.2"
+
+        // Must match iOS AppConfig.supabaseURL and Supabase Dashboard → Settings → API → Project URL.
+        // Wrong ref fails DNS ("Unable to resolve host"). Correct ref ends with …ahxtxvxq (not …ahxtvxvq).
+        // Note: empty SUPABASE_URL= in local.properties yields "" (not null) — treat as missing.
+        val supabaseUrl =
+            localProperties.getProperty("SUPABASE_URL")?.trim()?.takeIf { it.isNotEmpty() }
+                ?: "https://mjkrokpctcieahxtxvxq.supabase.co"
+        buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
 
         // Supabase anon key: add SUPABASE_ANON_KEY=your_key to project root local.properties
         val anonKey = localProperties.getProperty("SUPABASE_ANON_KEY") ?: ""

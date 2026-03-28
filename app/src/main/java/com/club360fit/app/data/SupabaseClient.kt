@@ -8,20 +8,19 @@ import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.storage.Storage
 
 /**
- * Supabase client singleton. URL uses project ID from Supabase dashboard.
+ * Supabase client singleton. URL comes from BuildConfig (default matches iOS + dashboard; override via local.properties SUPABASE_URL).
  * Anon key is read from BuildConfig (set via local.properties).
  * For profile avatars, create a public bucket named "avatars" in Supabase Storage.
  */
 object SupabaseClient {
 
-    private const val SUPABASE_URL = "https://mjkrokpctcieahxtxvxq.supabase.co"
     const val AVATARS_BUCKET = "avatars"
     const val TRANSFORMATIONS_BUCKET = "transformations"
     /** Daily meal photos (client uploads; coach reviews). Create in Supabase Storage. */
     const val MEAL_PHOTOS_BUCKET = "meal-photos"
 
     val client = createSupabaseClient(
-        supabaseUrl = SUPABASE_URL,
+        supabaseUrl = BuildConfig.SUPABASE_URL,
         supabaseKey = BuildConfig.SUPABASE_ANON_KEY
     ) {
         install(Auth) {

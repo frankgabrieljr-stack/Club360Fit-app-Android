@@ -1,7 +1,9 @@
 package com.club360fit.app.ui.screens.auth
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.club360fit.app.BuildConfig
 import com.club360fit.app.data.SupabaseClient
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.gotrue.providers.builtin.Email
@@ -12,6 +14,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.net.UnknownHostException
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
@@ -40,6 +43,31 @@ data class AuthUiState(
 )
 
 class AuthViewModel : ViewModel() {
+
+    companion object {
+        private const val TAG = "Club360Auth"
+    }
+
+    private fun friendlyNetworkAuthMessage(throwable: Throwable): String? {
+        var t: Throwable? = throwable
+        while (t != null) {
+            if (t is UnknownHostException) {
+                return "Can’t reach Club360Fit servers. Check Wi‑Fi or cellular data. " +
+                    "If you’re online, confirm the app was built with the correct Supabase project URL (see project README / dashboard)."
+            }
+            t = t.cause
+        }
+        val msg = throwable.message ?: return null
+        if (msg.contains("Unable to resolve host", ignoreCase = true) ||
+            msg.contains("No address associated with hostname", ignoreCase = true)
+        ) {
+            return "Can’t reach Club360Fit servers (DNS lookup failed). Your Supabase URL is probably fine — " +
+                "this often happens on the Android Emulator: try Cold Boot the AVD (Device Manager → ⋮ → Cold Boot), " +
+                "toggle the emulator’s Wi‑Fi in Settings → Network, turn off VPN on your Mac, or test on a physical phone. " +
+                "If it still fails, confirm Project Settings → API → Project URL matches BuildConfig."
+        }
+        return null
+    }
 
     private val _uiState = MutableStateFlow(AuthUiState())
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
@@ -77,7 +105,11 @@ class AuthViewModel : ViewModel() {
                 }
                 _uiState.update { it.copy(resetEmailSent = true) }
             } catch (e: Exception) {
-                _uiState.update { it.copy(resetErrorMessage = e.message ?: "Failed to send reset email.") }
+                if (BuildConfig.DEBUG) {
+                    Log.e(TAG, "resetPassword failed; url=${BuildConfig.SUPABASE_URL}", e)
+                }
+                val shown = friendlyNetworkAuthMessage(e) ?: (e.message ?: "Failed to send reset email.")
+                _uiState.update { it.copy(resetErrorMessage = shown) }
             }
         }
     }
@@ -133,9 +165,12 @@ class AuthViewModel : ViewModel() {
                 _uiState.update { it.copy(isLoading = false) }
                 onSuccess(isAdminResult)
             } catch (e: Exception) {
+                if (BuildConfig.DEBUG) {
+                    Log.e(TAG, "submit failed; url=${BuildConfig.SUPABASE_URL}", e)
+                }
                 val raw = e.message ?: "Authentication failed"
-                val message =
-                    if (raw.contains("Database error saving new user", ignoreCase = true)) {
+                val message = friendlyNetworkAuthMessage(e)
+                    ?: if (raw.contains("Database error saving new user", ignoreCase = true)) {
                         raw +
                             "\n\nThis is a Supabase database issue (not your form). Often a trigger on auth.users failed. Check Supabase → Logs → Postgres and triggers on auth.users."
                     } else {

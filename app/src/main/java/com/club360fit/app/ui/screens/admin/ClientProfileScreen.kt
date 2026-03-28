@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.clickable
@@ -21,6 +22,7 @@ import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -51,6 +53,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -108,6 +111,7 @@ fun ClientProfileScreen(
     var transferError by remember { mutableStateOf<String?>(null) }
     var showTransferConfirm by remember { mutableStateOf(false) }
     var showTransferSuccess by remember { mutableStateOf(false) }
+    var showCoachDirectory by remember { mutableStateOf(false) }
 
     var workoutPlans by remember { mutableStateOf<List<WorkoutPlanDto>>(emptyList()) }
     var mealPlans by remember { mutableStateOf<List<MealPlanDto>>(emptyList()) }
@@ -139,6 +143,7 @@ fun ClientProfileScreen(
             .sortedWith(compareBy({ it.date }, { it.time }))
     }
 
+    Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
@@ -317,10 +322,20 @@ fun ClientProfileScreen(
                         color = BurgundyPrimary
                     )
                     Text(
-                        text = "Paste the other coach’s user ID (UUID from Supabase → Authentication → Users). You must be this member’s current coach.",
+                        text = "Paste another coach’s user ID, or open the directory below. You must be this member’s current coach.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    OutlinedButton(
+                        onClick = { showCoachDirectory = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = BurgundyPrimary)
+                    ) {
+                        Icon(Icons.Default.Groups, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Browse coaches & copy IDs", fontWeight = FontWeight.Medium)
+                    }
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = transferTargetCoachId,
@@ -571,6 +586,17 @@ fun ClientProfileScreen(
                 }
             }
         }
+    }
+    if (showCoachDirectory) {
+        CoachDirectoryScreen(
+            onBack = { showCoachDirectory = false },
+            onSelectForTransfer = { id ->
+                transferTargetCoachId = id
+                showCoachDirectory = false
+            },
+            modifier = Modifier.fillMaxSize()
+        )
+    }
     }
 }
 

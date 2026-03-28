@@ -1,6 +1,7 @@
 package com.club360fit.app.data
 
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.Order
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -35,5 +36,15 @@ object ProfileRepository {
             getRoleForUserId(uid)?.let { out[uid] = it }
         }
         out
+    }
+
+    /** Coach accounts (`profiles.role` = admin) so admins can copy another coach’s Auth user id. Requires admin JWT (RLS). */
+    suspend fun fetchCoachDirectoryProfiles(): List<CoachDirectoryProfileDto> = withContext(Dispatchers.IO) {
+        client.postgrest["profiles"]
+            .select {
+                filter { eq("role", "admin") }
+                order("full_name", order = Order.ASCENDING)
+            }
+            .decodeList<CoachDirectoryProfileDto>()
     }
 }
