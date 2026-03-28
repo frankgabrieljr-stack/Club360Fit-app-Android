@@ -107,6 +107,7 @@ fun ClientProfileScreen(
     var transferBusy by remember { mutableStateOf(false) }
     var transferError by remember { mutableStateOf<String?>(null) }
     var showTransferConfirm by remember { mutableStateOf(false) }
+    var showTransferSuccess by remember { mutableStateOf(false) }
 
     var workoutPlans by remember { mutableStateOf<List<WorkoutPlanDto>>(emptyList()) }
     var mealPlans by remember { mutableStateOf<List<MealPlanDto>>(emptyList()) }
@@ -361,7 +362,7 @@ fun ClientProfileScreen(
                                         try {
                                             ClientRepository.transferClientToCoach(clientId, transferTargetCoachId)
                                             showTransferConfirm = false
-                                            onBack()
+                                            showTransferSuccess = true
                                         } catch (e: Exception) {
                                             transferError = e.message ?: "Transfer failed"
                                             showTransferConfirm = false
@@ -378,6 +379,26 @@ fun ClientProfileScreen(
                                 onClick = { showTransferConfirm = false },
                                 enabled = !transferBusy
                             ) { Text("Cancel") }
+                        }
+                    )
+                }
+
+                if (showTransferSuccess) {
+                    AlertDialog(
+                        onDismissRequest = {},
+                        title = { Text("Transfer complete") },
+                        text = {
+                            Text(
+                                "This member is now assigned to the other coach. They will no longer appear in your client list."
+                            )
+                        },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    showTransferSuccess = false
+                                    onBack()
+                                }
+                            ) { Text("OK") }
                         }
                     )
                 }

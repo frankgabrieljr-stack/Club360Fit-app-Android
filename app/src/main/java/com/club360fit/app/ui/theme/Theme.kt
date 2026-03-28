@@ -7,9 +7,15 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+
+/** Neutral dark surfaces so the app isn’t one flat burgundy wash when system dark mode is on. */
+private val DarkBackground = Color(0xFF121212)
+private val DarkSurface = Color(0xFF1C1B1F)
+private val DarkOnSurface = Color(0xFFE6E1E5)
 
 private val LightColorScheme = lightColorScheme(
     primary = BurgundyPrimary,
@@ -32,10 +38,12 @@ private val DarkColorScheme = darkColorScheme(
     onPrimaryContainer = White,
     secondary = BurgundyLight,
     onSecondary = BurgundyDark,
-    background = BurgundyDark,
-    onBackground = White,
-    surface = BurgundyDark,
-    onSurface = White,
+    background = DarkBackground,
+    onBackground = DarkOnSurface,
+    surface = DarkSurface,
+    onSurface = DarkOnSurface,
+    surfaceVariant = Color(0xFF49454F),
+    onSurfaceVariant = Color(0xFFCAC4D0),
     outline = Outline
 )
 

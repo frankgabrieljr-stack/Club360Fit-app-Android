@@ -74,8 +74,9 @@ class UserProfileViewModel : ViewModel() {
             ?: nameStr?.substringAfter(" ", "")?.takeIf { it.isNotBlank() }
             ?: ""
 
-        // Avatar URL
-        val avatarUrl = metaString("avatar_url") ?: metaString("picture")
+        // Avatar URL — blank strings in metadata behave like “no photo” (fixes empty avatar_url blocking uploads until “Remove”).
+        val rawAvatar = metaString("avatar_url") ?: metaString("picture")
+        val avatarUrl = rawAvatar?.takeIf { it.isNotBlank() }
 
         // Role
         val role = metaString("role") ?: "client"

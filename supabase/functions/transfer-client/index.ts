@@ -1,5 +1,8 @@
 // Deploy: `supabase functions deploy transfer-client --project-ref <ref>`
 // Secrets (auto in hosted project): SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
+// Dashboard (hosted): Edge Functions → transfer-client → Settings → turn OFF "Verify JWT with legacy secret"
+//   when this function validates the caller via auth.getUser() itself. If ON, the gateway can return HTTP 401
+//   before Deno runs (empty body, no function logs) — often mistaken for an app/session bug.
 // Rules:
 //  - Caller must be the current assigned coach (clients.coach_id = auth.uid()); unclaimed clients must be claimed first
 //  - Target coach must exist and have user_metadata.role = 'admin'

@@ -75,11 +75,13 @@ struct UserProfileView: View {
                         .font(.caption.weight(.medium))
                         .foregroundStyle(Club360Theme.burgundy.opacity(0.9))
 
-                    Button("Remove photo", role: .destructive) {
-                        Task { await removeAvatar() }
+                    if hasAvatarInMetadata {
+                        Button("Remove photo", role: .destructive) {
+                            Task { await removeAvatar() }
+                        }
+                        .font(.caption)
+                        .disabled(isUploadingAvatar)
                     }
-                    .font(.caption)
-                    .disabled(isUploadingAvatar)
 
                     Text(displayName)
                         .font(.title2.bold())
@@ -215,6 +217,24 @@ struct UserProfileView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(16)
                         .club360Glass(cornerRadius: 22)
+
+                        NavigationLink {
+                            CoachDirectoryView(currentUserId: auth.session?.user.id.uuidString)
+                        } label: {
+                            HStack {
+                                Text("Coach directory (copy user IDs)")
+                                    .font(.body.weight(.semibold))
+                                    .foregroundStyle(Club360Theme.cardTitle)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(Club360Theme.captionOnGlass.opacity(0.85))
+                            }
+                            .padding(16)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .club360Glass(cornerRadius: 22)
+                        }
+                        .buttonStyle(.plain)
                     }
 
                     if let uploadError {
@@ -243,7 +263,10 @@ struct UserProfileView: View {
         .navigationTitle("Profile")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
-        .onAppear(perform: populateEditableFieldsFromSession)
+        .onAppear {
+            populateEditableFieldsFromSession()
+            pickerItem = nil
+        }
         .onChange(of: auth.session?.user.id.uuidString) { _, _ in
             populateEditableFieldsFromSession()
         }
@@ -301,11 +324,21 @@ struct UserProfileView: View {
         )
     }
 
+    /// True when metadata has a non-blank avatar URL (empty strings are treated as no photo — avoids Coil/AsyncImage oddities and the “tap Remove when empty” workaround).
+    private var hasAvatarInMetadata: Bool {
+        avatarURLString != nil
+    }
+
     private var avatarURLString: String? {
         guard let meta = auth.session?.user.userMetadata else { return nil }
-        if case let .string(s) = meta["avatar_url"] { return s }
-        if case let .string(s) = meta["picture"] { return s }
-        return nil
+        let raw: String? = {
+            if case let .string(s) = meta["avatar_url"] { return s }
+            if case let .string(s) = meta["picture"] { return s }
+            return nil
+        }()
+        let trimmed = raw?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !trimmed.isEmpty, let url = URL(string: trimmed), url.scheme != nil else { return nil }
+        return trimmed
     }
 
     private var displayName: String {

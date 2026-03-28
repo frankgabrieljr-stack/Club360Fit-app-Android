@@ -91,6 +91,25 @@ enum ClientDataService {
         return rows.first?.role.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
     }
 
+    /// One row from `public.profiles` for coach directory; `id` is the Supabase Auth user id (use for transfers).
+    struct CoachDirectoryProfileRow: Decodable, Sendable, Identifiable {
+        let id: String
+        let full_name: String?
+        let email: String?
+        let role: String
+    }
+
+    /// Coach accounts (`profiles.role` = admin) so admins can copy another coach’s Auth user id. Requires admin JWT (RLS).
+    static func fetchCoachDirectoryProfiles() async throws -> [CoachDirectoryProfileRow] {
+        try await db
+            .from("profiles")
+            .select("id, full_name, email, role")
+            .eq("role", value: "admin")
+            .order("full_name", ascending: true)
+            .execute()
+            .value
+    }
+
     /// Sets `coach_id` to the signed-in user when the row is still unassigned (signup intake). Required for plan RLS after `coach_id` became nullable.
     static func claimCoachAssignmentIfNeeded(clientId: String) async throws {
         guard let session = db.auth.currentSession else { return }

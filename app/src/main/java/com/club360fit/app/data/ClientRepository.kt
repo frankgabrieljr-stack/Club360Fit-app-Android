@@ -19,7 +19,9 @@ import kotlinx.serialization.json.buildJsonObject
 @Serializable
 private data class TransferClientBody(
     @SerialName("client_id") val clientId: String,
-    @SerialName("target_coach_user_id") val targetCoachUserId: String
+    @SerialName("target_coach_user_id") val targetCoachUserId: String,
+    /** Same as [targetCoachUserId] — older `transfer-client` deploys only read this key. */
+    @SerialName("target_coach_id") val targetCoachId: String
 )
 
 @Serializable
@@ -39,7 +41,11 @@ object ClientRepository {
     suspend fun transferClientToCoach(clientId: String, targetCoachUserId: String) = withContext(Dispatchers.IO) {
         val trimmed = targetCoachUserId.trim().lowercase()
         require(trimmed.isNotEmpty()) { "Enter the other coach’s user ID (UUID)." }
-        val body = TransferClientBody(clientId = clientId, targetCoachUserId = trimmed)
+        val body = TransferClientBody(
+            clientId = clientId,
+            targetCoachUserId = trimmed,
+            targetCoachId = trimmed
+        )
         try {
             val response = client.functions.invoke(
                 function = "transfer-client",

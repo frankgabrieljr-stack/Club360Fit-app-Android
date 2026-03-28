@@ -268,10 +268,12 @@ fun UserProfileScreen(
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                TextButton(
-                    onClick = { viewModel.removeAvatar() },
-                    enabled = !state.isUploadingAvatar
-                ) { Text("Remove photo") }
+                if (!state.avatarUrl.isNullOrBlank()) {
+                    TextButton(
+                        onClick = { viewModel.removeAvatar() },
+                        enabled = !state.isUploadingAvatar
+                    ) { Text("Remove photo") }
+                }
                 Spacer(modifier = Modifier.height(20.dp))
                 Text(
                     text = state.displayName,
