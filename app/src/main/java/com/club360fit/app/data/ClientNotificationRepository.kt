@@ -1,10 +1,28 @@
 package com.club360fit.app.data
 
+import io.github.jan.supabase.functions.functions
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
+import io.ktor.http.ContentType
+import io.ktor.http.Headers
+import io.ktor.http.HttpHeaders
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import java.time.Instant
+
+@Serializable
+private data class DevicePushPayload(
+    @SerialName("client_id") val clientId: String,
+    val kind: String,
+    val title: String,
+    val body: String,
+    @SerialName("ref_type") val refType: String? = null,
+    @SerialName("ref_id") val refId: String? = null,
+    @SerialName("dedupe_key") val dedupeKey: String? = null,
+    @SerialName("visible_to_client") val visibleToClient: Boolean
+)
 
 object ClientNotificationRepository {
     private val client = SupabaseClient.client
@@ -114,8 +132,30 @@ object ClientNotificationRepository {
     suspend fun tryInsert(row: ClientNotificationDto) = withContext(Dispatchers.IO) {
         try {
             client.postgrest["client_notifications"].insert(row)
+            triggerDevicePush(row)
         } catch (_: Exception) {
             /* duplicate dedupe or network */
+        }
+    }
+
+    private suspend fun triggerDevicePush(row: ClientNotificationDto) {
+        runCatching {
+            client.functions.invoke(
+                function = "send-device-push",
+                body = DevicePushPayload(
+                    clientId = row.clientId,
+                    kind = row.kind,
+                    title = row.title,
+                    body = row.body,
+                    refType = row.refType,
+                    refId = row.refId,
+                    dedupeKey = row.dedupeKey,
+                    visibleToClient = row.visibleToClient ?: true
+                ),
+                headers = Headers.build {
+                    append(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                }
+            )
         }
     }
 

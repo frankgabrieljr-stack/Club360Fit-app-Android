@@ -1,6 +1,22 @@
 import Foundation
 import Supabase
 
+private struct DevicePushPayload: Encodable {
+    let client_id: String
+    let kind: String
+    let title: String
+    let body: String
+    let ref_type: String?
+    let ref_id: String?
+    let dedupe_key: String?
+    let visible_to_client: Bool
+}
+
+private struct DevicePushResponse: Decodable {
+    let ok: Bool?
+    let error: String?
+}
+
 extension ClientDataService {
     private static var notifDb: SupabaseClient { Club360FitSupabase.shared }
 
@@ -10,6 +26,7 @@ extension ClientDataService {
             .from("client_notifications")
             .insert(row)
             .execute()
+        try? await triggerDevicePush(row)
     }
 
     /// Coach-facing updates shown in the member’s Updates feed (`visible_to_client` = true).
@@ -56,6 +73,27 @@ extension ClientDataService {
             visibleToClient: false
         )
         try? await insertClientNotification(row)
+    }
+
+    private static func triggerDevicePush(_ row: ClientNotificationInsert) async throws {
+        let payload = DevicePushPayload(
+            client_id: row.clientId,
+            kind: row.kind,
+            title: row.title,
+            body: row.body,
+            ref_type: row.refType,
+            ref_id: row.refId,
+            dedupe_key: row.dedupeKey,
+            visible_to_client: row.visibleToClient
+        )
+        let options = try await Club360FitSupabase.functionInvokeOptions(body: payload)
+        let response: DevicePushResponse = try await Club360FitSupabase.shared.functions.invoke(
+            "send-device-push",
+            options: options
+        )
+        if response.ok != true, let error = response.error {
+            throw NSError(domain: "Club360Fit.Push", code: 1, userInfo: [NSLocalizedDescriptionKey: error])
+        }
     }
 
     // MARK: - Coach hub (all coached clients; RLS restricts rows)

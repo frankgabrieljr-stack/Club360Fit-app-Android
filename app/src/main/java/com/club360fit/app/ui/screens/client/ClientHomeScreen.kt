@@ -54,9 +54,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.club360fit.app.data.MealPlanDto
+import com.club360fit.app.data.PushRegistrationRepository
 import com.club360fit.app.data.WorkoutPlanDto
 import com.club360fit.app.ui.theme.BurgundyPrimary
 import com.club360fit.app.ui.utils.toDisplayDate
@@ -81,9 +83,11 @@ fun ClientHomeScreen(
     val scrollState = rememberScrollState()
     var selectedTab by remember { mutableIntStateOf(0) } // 0 = Home, 1 = Gallery
     val clientId = state.clientId
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.loadData()
+        PushRegistrationRepository.syncAndroidFcmTokenIfPossible(context)
     }
 
     Column(

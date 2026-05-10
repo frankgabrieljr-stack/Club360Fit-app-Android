@@ -39,6 +39,20 @@ object WorkoutPlanRepository {
     }
 
     suspend fun upsertPlan(plan: WorkoutPlanDto) = withContext(Dispatchers.IO) {
+        val isNew = plan.id == null
         client.postgrest["workout_plans"].upsert(plan)
+        ClientNotificationRepository.notifyMemberFromCoach(
+            clientId = plan.clientId,
+            kind = "workout_plan",
+            title = if (isNew) "New workout plan" else "Workout plan updated",
+            body = plan.title,
+            refType = "workout_plan",
+            refId = plan.id,
+            dedupeKey = if (isNew) {
+                "workout_plan_new:${plan.clientId}:${plan.weekStart}:${plan.title}"
+            } else {
+                null
+            }
+        )
     }
 }

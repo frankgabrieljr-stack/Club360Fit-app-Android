@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "208780531677",
+    "project_id": "club360fit-8cb00",
+    "storage_bucket": "club360fit-8cb00.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:208780531677:android:6f06e15bf250bcd6710834",
+        "android_client_info": {
+          "package_name": "com.club360fit.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAiJ-smSs2VG3WQDwGIqPmqR1SahO_ZILs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
+

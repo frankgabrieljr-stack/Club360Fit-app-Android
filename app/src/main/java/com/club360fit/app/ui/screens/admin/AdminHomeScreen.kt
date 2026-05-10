@@ -29,6 +29,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
@@ -39,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.club360fit.app.data.AdherenceMetricsRepository
 import com.club360fit.app.data.ClientDto
+import com.club360fit.app.data.PushRegistrationRepository
 import com.club360fit.app.data.ScheduleEvent
 import com.club360fit.app.ui.theme.BurgundyPrimary
 import com.club360fit.app.ui.theme.Club360FitTheme
@@ -64,6 +66,7 @@ fun AdminHomeScreen(
     val coachUnread by viewModel.coachUnreadCount.collectAsState()
     val scheduleViewModel: ScheduleViewModel = viewModel()
     val lifecycleOwner = LocalLifecycleOwner.current
+    val context = LocalContext.current
     var selectedTab by remember { mutableIntStateOf(0) }
     var hubShowSchedule by remember { mutableStateOf(false) }
     var showCoachDirectory by remember { mutableStateOf(false) }
@@ -74,6 +77,10 @@ fun AdminHomeScreen(
     LaunchedEffect(selectedTab) {
         if (selectedTab != 0) hubShowSchedule = false
         if (selectedTab != 5) moreDestination = null
+    }
+
+    LaunchedEffect(Unit) {
+        PushRegistrationRepository.syncAndroidFcmTokenIfPossible(context)
     }
 
     DisposableEffect(lifecycleOwner) {

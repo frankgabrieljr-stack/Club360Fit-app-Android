@@ -52,6 +52,17 @@ object ScheduleRepository {
             ?: throw IllegalStateException("Not signed in")
         val withUser = event.copy(userId = uid)
         client.postgrest["schedule_events"].insert(withUser)
+        event.clientId?.let { clientId ->
+            ClientNotificationRepository.notifyMemberFromCoach(
+                clientId = clientId,
+                kind = "schedule",
+                title = if (event.isCompleted) "Session logged" else "New session scheduled",
+                body = "${event.title} · ${event.date}",
+                refType = "schedule",
+                refId = event.id,
+                dedupeKey = "schedule_new:$clientId:${event.date}:${event.time}:${event.title}"
+            )
+        }
         loadEvents()
     }
 
@@ -61,6 +72,16 @@ object ScheduleRepository {
         if (event.userId.isNotBlank() && event.userId != uid) return@withContext
         val withUser = event.copy(userId = uid)
         client.postgrest["schedule_events"].upsert(withUser)
+        event.clientId?.let { clientId ->
+            ClientNotificationRepository.notifyMemberFromCoach(
+                clientId = clientId,
+                kind = "schedule",
+                title = "Session updated",
+                body = "${event.title} · ${event.date}",
+                refType = "schedule",
+                refId = event.id
+            )
+        }
         loadEvents()
     }
 

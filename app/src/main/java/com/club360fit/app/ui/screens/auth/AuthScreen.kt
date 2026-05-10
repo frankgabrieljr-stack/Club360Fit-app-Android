@@ -32,9 +32,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import com.club360fit.app.data.PushRegistrationRepository
 import com.club360fit.app.ui.theme.BurgundyPrimary
 import com.club360fit.app.ui.theme.White
 import com.club360fit.app.ui.utils.fromFeetInches
@@ -53,6 +55,7 @@ fun AuthScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     val scrollState = rememberScrollState()
+    val context = LocalContext.current
     var passwordVisible by remember { mutableStateOf(false) }
 
     Column(
@@ -255,7 +258,12 @@ fun AuthScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
-                onClick = { viewModel.submit(isSignIn) { onAuthSuccess(it) } },
+                onClick = {
+                    viewModel.submit(isSignIn) { isAdmin ->
+                        PushRegistrationRepository.syncAndroidFcmTokenIfPossible(context)
+                        onAuthSuccess(isAdmin)
+                    }
+                },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 enabled = !state.isLoading,
                 colors = ButtonDefaults.buttonColors(containerColor = BurgundyPrimary, contentColor = White)
