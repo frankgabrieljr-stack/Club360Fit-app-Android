@@ -413,7 +413,8 @@ private enum class AdminMoreDestination {
 private enum class AdminScheduleQuickView {
     Menu,
     Day,
-    Week
+    Week,
+    Calendar
 }
 
 @Composable
@@ -466,6 +467,11 @@ private fun AdminScheduleOptionsTab(
                     subtitle = "${weekEvents.size} session${if (weekEvents.size == 1) "" else "s"} this week",
                     onClick = { selectedView = AdminScheduleQuickView.Week }
                 )
+                AdminScheduleOptionCard(
+                    title = "Calendar view",
+                    subtitle = "Month view, date picker, and add events",
+                    onClick = { selectedView = AdminScheduleQuickView.Calendar }
+                )
             }
         }
         AdminScheduleQuickView.Day -> AdminScheduleEventList(
@@ -484,6 +490,22 @@ private fun AdminScheduleOptionsTab(
             clientNameById = clientNameById,
             onBack = { selectedView = AdminScheduleQuickView.Menu }
         )
+        AdminScheduleQuickView.Calendar -> Column(modifier = Modifier.fillMaxSize()) {
+            TextButton(
+                onClick = { selectedView = AdminScheduleQuickView.Menu },
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back to schedule",
+                    tint = BurgundyPrimary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(Modifier.width(4.dp))
+                Text("Schedule", color = BurgundyPrimary)
+            }
+            ScheduleTab(clients = clients, viewModel = viewModel)
+        }
     }
 }
 
