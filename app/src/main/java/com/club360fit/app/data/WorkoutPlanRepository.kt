@@ -4,6 +4,7 @@ import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.util.UUID
 
 object WorkoutPlanRepository {
     private val client = SupabaseClient.client
@@ -40,16 +41,21 @@ object WorkoutPlanRepository {
 
     suspend fun upsertPlan(plan: WorkoutPlanDto) = withContext(Dispatchers.IO) {
         val isNew = plan.id == null
-        client.postgrest["workout_plans"].upsert(plan)
+        val persistedPlan = if (isNew) {
+            plan.copy(id = UUID.randomUUID().toString())
+        } else {
+            plan
+        }
+        client.postgrest["workout_plans"].upsert(persistedPlan)
         ClientNotificationRepository.notifyMemberFromCoach(
-            clientId = plan.clientId,
+            clientId = persistedPlan.clientId,
             kind = "workout_plan",
             title = if (isNew) "New workout plan" else "Workout plan updated",
-            body = plan.title,
+            body = persistedPlan.title,
             refType = "workout_plan",
-            refId = plan.id,
+            refId = persistedPlan.id,
             dedupeKey = if (isNew) {
-                "workout_plan_new:${plan.clientId}:${plan.weekStart}:${plan.title}"
+                "workout_plan_new:${persistedPlan.clientId}:${persistedPlan.weekStart}:${persistedPlan.title}"
             } else {
                 null
             }
