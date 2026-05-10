@@ -71,10 +71,10 @@ import com.club360fit.app.data.WorkoutPlanDto
 import com.club360fit.app.data.WorkoutPlanRepository
 import com.club360fit.app.data.ScheduleEvent
 import com.club360fit.app.data.ScheduleRepository
+import com.club360fit.app.ui.utils.buildClientMemberSummaryLine
 import com.club360fit.app.ui.utils.toDisplayDate
 import com.club360fit.app.ui.theme.BurgundyPrimary
 import com.club360fit.app.ui.utils.fromFeetInches
-import com.club360fit.app.ui.utils.formatWeightLbsFromKg
 import com.club360fit.app.ui.utils.fromPounds
 import com.club360fit.app.ui.utils.toFeetInches
 import com.club360fit.app.ui.utils.SubmitResultMessages
@@ -203,29 +203,50 @@ fun ClientProfileScreen(
                         color = BurgundyPrimary.copy(alpha = 0.92f)
                     )
                 }
-                Spacer(modifier = Modifier.height(8.dp))
-                androidx.compose.material3.Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = androidx.compose.material3.CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = "Client info",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                val memberSummary = buildClientMemberSummaryLine(
+                    c.age,
+                    c.heightCm,
+                    c.weightKg,
+                    c.goal.orEmpty()
+                )
+                if (memberSummary.isNotBlank()) {
+                    Text(
+                        text = memberSummary,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                } else {
+                    Text(
+                        text = "No age, height, weight, or goal on file yet. They appear here when set on the client record.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                c.foodRestrictions?.takeIf { it.isNotBlank() }?.let { food ->
+                    Spacer(modifier = Modifier.height(12.dp))
+                    androidx.compose.material3.Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = androidx.compose.material3.CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+                        )
                     ) {
-                        c.age?.let { Text("Age: $it") }
-                        c.heightCm?.let {
-                            val (ft, inc) = it.toFeetInches()
-                            Text("Height: ${ft}' ${inc}\"")
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Text("Food restrictions: $food")
                         }
-                        c.weightKg?.let { w ->
-                            formatWeightLbsFromKg(w)?.let { label -> Text("Weight: $label") }
-                        }
-                        c.goal?.trim()?.takeIf { it.isNotEmpty() }?.let { Text("Goal: $it") }
-                        c.foodRestrictions?.takeIf { it.isNotBlank() }?.let { Text("Food restrictions: $it") }
                     }
                 }
 

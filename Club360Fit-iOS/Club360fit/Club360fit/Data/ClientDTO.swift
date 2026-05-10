@@ -3,6 +3,7 @@ import Foundation
 /// Mirrors Android `ClientDto` / `clients` table.
 struct ClientDTO: Decodable, Sendable {
     let id: String?
+    let coachId: String?
     let userId: String
     let fullName: String?
     let age: Int?
@@ -18,6 +19,7 @@ struct ClientDTO: Decodable, Sendable {
 
     enum CodingKeys: String, CodingKey {
         case id
+        case coachId = "coach_id"
         case userId = "user_id"
         case fullName = "full_name"
         case age
@@ -34,6 +36,7 @@ struct ClientDTO: Decodable, Sendable {
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = try c.decodeIfPresent(String.self, forKey: .id)
+        coachId = try c.decodeIfPresent(String.self, forKey: .coachId)
         userId = try c.decode(String.self, forKey: .userId)
         fullName = try c.decodeIfPresent(String.self, forKey: .fullName)
         age = try c.decodeIfPresent(Int.self, forKey: .age)

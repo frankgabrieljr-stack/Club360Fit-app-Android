@@ -18,6 +18,7 @@ object ClientNotificationRepository {
                     limit(limit.toLong())
                 }
                 .decodeList<ClientNotificationDto>()
+                .filter { it.clientDeletedAt == null }
         }
 
     suspend fun unreadCount(clientId: String): Int = withContext(Dispatchers.IO) {
@@ -33,6 +34,7 @@ object ClientNotificationRepository {
                     limit(limit.toLong())
                 }
                 .decodeList<ClientNotificationDto>()
+                .filter { it.coachDeletedAt == null }
         }
 
     /**
@@ -88,9 +90,22 @@ object ClientNotificationRepository {
         }
     }
 
-    /** Permanently removes a row (RLS applies). Requires migration `019_client_notifications_delete_policies`. */
-    suspend fun delete(notificationId: String) = withContext(Dispatchers.IO) {
-        client.postgrest["client_notifications"].delete {
+    /** Hides a notification from the signed-in member only. */
+    suspend fun deleteForMember(notificationId: String) = withContext(Dispatchers.IO) {
+        val now = Instant.now().toString()
+        client.postgrest["client_notifications"].update(
+            { set("client_deleted_at", now) }
+        ) {
+            filter { eq("id", notificationId) }
+        }
+    }
+
+    /** Hides a notification from coach inboxes only; the member copy remains visible. */
+    suspend fun deleteForCoach(notificationId: String) = withContext(Dispatchers.IO) {
+        val now = Instant.now().toString()
+        client.postgrest["client_notifications"].update(
+            { set("coach_deleted_at", now) }
+        ) {
             filter { eq("id", notificationId) }
         }
     }

@@ -26,6 +26,9 @@ final class ClientHomeViewModel {
         return r == "admin" ? "App · Admin" : "App · Client"
     }
 
+    /// Age, height, weight, goal from `public.clients` (coach client hub).
+    var memberProfileSummaryLine: String = ""
+
     var canViewWorkouts = true
     var canViewNutrition = true
     var canViewEvents = false
@@ -91,7 +94,6 @@ final class ClientHomeViewModel {
         defer { isLoading = false }
 
         do {
-            try await ClientDataService.claimCoachAssignmentIfNeeded(clientId: requestedId)
             guard let row = try await ClientDataService.fetchClientById(requestedId),
                   let cid = row.id, !cid.isEmpty else {
                 errorMessage = "Client not found or not visible to your account."
@@ -149,6 +151,8 @@ final class ClientHomeViewModel {
         } else {
             memberPlatformRole = nil
         }
+
+        memberProfileSummaryLine = row.memberSummaryLine
     }
 
     private func resetSummary() {
@@ -168,6 +172,7 @@ final class ClientHomeViewModel {
         upcomingSessionCount = 0
         canViewEvents = false
         canViewPayments = false
+        memberProfileSummaryLine = ""
     }
 
     private static func applyScheduleSummary(events: [ScheduleEventDTO], to model: ClientHomeViewModel) {

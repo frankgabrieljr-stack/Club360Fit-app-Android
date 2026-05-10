@@ -23,7 +23,6 @@ import com.club360fit.app.ui.screens.client.MyWorkoutsScreen
 import com.club360fit.app.ui.screens.admin.AdminHomeScreen
 import com.club360fit.app.ui.screens.admin.AdminHomeViewModel
 import com.club360fit.app.ui.screens.admin.CoachHubNotificationsScreen
-import com.club360fit.app.ui.screens.admin.ClientDetailScreen
 import com.club360fit.app.ui.screens.admin.ClientProfileScreen
 import com.club360fit.app.ui.screens.admin.ClientMealsScreen
 import com.club360fit.app.ui.screens.admin.ClientMealPhotosScreen
@@ -136,14 +135,11 @@ fun Club360FitNavHost(startDestination: String = Routes.WELCOME) {
         composable(Routes.ADMIN_HOME) {
             AdminHomeScreen(
                 onOpenCoachNotifications = { navController.navigate(Routes.COACH_HUB_NOTIFICATIONS) },
-                onOpenClientDetails = { clientId ->
-                    navController.navigate("${Routes.CLIENT_DETAIL}/$clientId")
-                },
                 onOpenClientProfile = { clientId ->
                     navController.navigate("${Routes.CLIENT_PROFILE}/${clientId ?: "new"}")
                 },
                 onOpenClientHub = { clientId ->
-                    navController.navigate("${Routes.CLIENT_DETAIL}/$clientId")
+                    navController.navigate("${Routes.CLIENT_PROFILE}/$clientId")
                 },
                 onSignOut = {
                     scope.launch {
@@ -163,13 +159,6 @@ fun Club360FitNavHost(startDestination: String = Routes.WELCOME) {
             CoachHubNotificationsScreen(
                 onBack = { navController.popBackStack() },
                 onUnreadChanged = { adminVm.refreshCoachUnread() }
-            )
-        }
-        composable("${Routes.CLIENT_DETAIL}/{clientId}") { backStackEntry ->
-            val clientId = backStackEntry.arguments?.getString("clientId") ?: return@composable
-            ClientDetailScreen(
-                clientId = clientId,
-                onBack = { navController.popBackStack() }
             )
         }
         composable("${Routes.CLIENT_PROFILE}/{clientId}") { backStackEntry ->

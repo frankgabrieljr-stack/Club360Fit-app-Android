@@ -11,11 +11,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material3.Badge
@@ -41,8 +44,7 @@ import com.club360fit.app.ui.theme.BurgundyPrimary
 import com.club360fit.app.ui.theme.Club360FitTheme
 import com.club360fit.app.ui.screens.gallery.TransformationGalleryScreen
 import com.club360fit.app.ui.screens.profile.UserProfileScreen
-import com.club360fit.app.ui.utils.toFeetInches
-import com.club360fit.app.ui.utils.formatWeightLbsFromKg
+import com.club360fit.app.ui.utils.buildClientMemberSummaryLine
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -53,7 +55,6 @@ import kotlin.math.ceil
 @Composable
 fun AdminHomeScreen(
     onOpenCoachNotifications: () -> Unit,
-    onOpenClientDetails: (String) -> Unit,
     onOpenClientProfile: (String?) -> Unit,
     onOpenClientHub: (String) -> Unit,
     onSignOut: () -> Unit,
@@ -66,9 +67,13 @@ fun AdminHomeScreen(
     var selectedTab by remember { mutableIntStateOf(0) }
     var hubShowSchedule by remember { mutableStateOf(false) }
     var showCoachDirectory by remember { mutableStateOf(false) }
+    val assignedClients = state.clients.filter { it.coachId != null }
+    val newClients = state.clients.filter { it.coachId == null }
+    var moreDestination by remember { mutableStateOf<AdminMoreDestination?>(null) }
 
     LaunchedEffect(selectedTab) {
         if (selectedTab != 0) hubShowSchedule = false
+        if (selectedTab != 5) moreDestination = null
     }
 
     DisposableEffect(lifecycleOwner) {
@@ -90,7 +95,7 @@ fun AdminHomeScreen(
     Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
         floatingActionButton = {
-            if (selectedTab == 1) {
+            if (selectedTab == 3) {
                 FloatingActionButton(
                     onClick = { onOpenClientProfile(null) },
                     containerColor = BurgundyPrimary,
@@ -116,29 +121,36 @@ fun AdminHomeScreen(
                 NavigationBarItem(
                     selected = selectedTab == 1,
                     onClick = { selectedTab = 1 },
-                    icon = { Icon(Icons.Default.Groups, contentDescription = null) },
-                    label = { Text("Clients") },
+                    icon = { Icon(Icons.Default.DateRange, contentDescription = null) },
+                    label = { Text("Schedule") },
                     colors = navItemColors
                 )
                 NavigationBarItem(
                     selected = selectedTab == 2,
                     onClick = { selectedTab = 2 },
-                    icon = { Icon(Icons.Default.Restaurant, contentDescription = null) },
-                    label = { Text("Meals") },
+                    icon = { Icon(Icons.Default.PersonAdd, contentDescription = null) },
+                    label = { Text("New clients") },
                     colors = navItemColors
                 )
                 NavigationBarItem(
                     selected = selectedTab == 3,
                     onClick = { selectedTab = 3 },
-                    icon = { Icon(Icons.Default.PhotoLibrary, contentDescription = null) },
-                    label = { Text("Gallery") },
+                    icon = { Icon(Icons.Default.Groups, contentDescription = null) },
+                    label = { Text("My clients") },
                     colors = navItemColors
                 )
                 NavigationBarItem(
                     selected = selectedTab == 4,
                     onClick = { selectedTab = 4 },
-                    icon = { Icon(Icons.Default.Person, contentDescription = null) },
-                    label = { Text("Profile") },
+                    icon = { Icon(Icons.Default.Restaurant, contentDescription = null) },
+                    label = { Text("Meal inbox") },
+                    colors = navItemColors
+                )
+                NavigationBarItem(
+                    selected = selectedTab == 5,
+                    onClick = { selectedTab = 5 },
+                    icon = { Icon(Icons.Default.MoreVert, contentDescription = null) },
+                    label = { Text("More") },
                     colors = navItemColors
                 )
             }
@@ -225,7 +237,51 @@ fun AdminHomeScreen(
                     ) {
                         Column(modifier = Modifier.padding(8.dp)) {
                             Text(
-                                text = "Clients",
+                                text = "Schedule",
+                                style = MaterialTheme.typography.headlineLarge,
+                                color = BurgundyPrimary
+                            )
+                            Text(
+                                text = "Day and week views",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = BurgundyPrimary.copy(alpha = 0.85f)
+                            )
+                        }
+                    }
+                }
+                2 -> {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.padding(8.dp)) {
+                            Text(
+                                text = "New clients",
+                                style = MaterialTheme.typography.headlineLarge,
+                                color = BurgundyPrimary
+                            )
+                            Text(
+                                text = "Review intake and claim members",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = BurgundyPrimary.copy(alpha = 0.85f)
+                            )
+                        }
+                    }
+                }
+                3 -> {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.padding(8.dp)) {
+                            Text(
+                                text = "My clients",
                                 style = MaterialTheme.typography.headlineLarge,
                                 color = BurgundyPrimary
                             )
@@ -237,7 +293,7 @@ fun AdminHomeScreen(
                         }
                     }
                 }
-                2 -> {
+                4 -> {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -259,18 +315,42 @@ fun AdminHomeScreen(
                         }
                     }
                 }
+                5 -> {
+                    if (moreDestination == null) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.Start,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.padding(8.dp)) {
+                                Text(
+                                    text = "More",
+                                    style = MaterialTheme.typography.headlineLarge,
+                                    color = BurgundyPrimary
+                                )
+                                Text(
+                                    text = "Gallery and profile",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = BurgundyPrimary.copy(alpha = 0.85f)
+                                )
+                            }
+                        }
+                    }
+                }
             }
 
             Box(modifier = Modifier.weight(1f)) {
                 when (selectedTab) {
                     0 -> {
                         if (hubShowSchedule) {
-                            ScheduleTab(clients = state.clients, viewModel = scheduleViewModel)
+                            ScheduleTab(clients = assignedClients, viewModel = scheduleViewModel)
                         } else {
                             OverviewTab(
-                                clients = state.clients,
+                                clients = assignedClients,
                                 scheduleViewModel = scheduleViewModel,
-                                onGoToClients = { selectedTab = 1 },
+                                onGoToClients = { selectedTab = 3 },
                                 onGoToSchedule = { focusDate ->
                                     focusDate?.let { scheduleViewModel.jumpToDate(it) }
                                     hubShowSchedule = true
@@ -278,26 +358,40 @@ fun AdminHomeScreen(
                             )
                         }
                     }
-                    1 -> ClientsTab(
+                    1 -> AdminScheduleOptionsTab(
+                        clients = assignedClients,
+                        viewModel = scheduleViewModel
+                    )
+                    2 -> NewClientsTab(
+                        clients = newClients,
+                        profileRolesByUserId = state.profileRolesByUserId,
+                        onClaim = viewModel::claimClient
+                    )
+                    3 -> ClientsTab(
                         viewModel = viewModel,
-                        onOpenDetails = onOpenClientDetails,
                         onOpenProfile = onOpenClientProfile
                     )
-                    2 -> CoachMealPhotoInboxScreen(
-                        clients = state.clients,
+                    4 -> CoachMealPhotoInboxScreen(
+                        clients = assignedClients,
                         onOpenClientHub = { clientId, _ -> onOpenClientHub(clientId) }
                     )
-                    3 -> TransformationGalleryScreen(
-                        onBack = {},
-                        showTopBarBack = false
-                    )
-                    4 -> UserProfileScreen(
-                        onBack = {},
-                        onEditProfile = {},
-                        onSignOut = onSignOut,
-                        showTopBarBack = false,
-                        onOpenCoachDirectory = { showCoachDirectory = true }
-                    )
+                    5 -> when (moreDestination) {
+                        AdminMoreDestination.Gallery -> TransformationGalleryScreen(
+                            onBack = { moreDestination = null },
+                            showTopBarBack = true
+                        )
+                        AdminMoreDestination.Profile -> UserProfileScreen(
+                            onBack = { moreDestination = null },
+                            onEditProfile = {},
+                            onSignOut = onSignOut,
+                            showTopBarBack = true,
+                            onOpenCoachDirectory = { showCoachDirectory = true }
+                        )
+                        null -> AdminMoreTab(
+                            onOpenGallery = { moreDestination = AdminMoreDestination.Gallery },
+                            onOpenProfile = { moreDestination = AdminMoreDestination.Profile }
+                        )
+                    }
                 }
             }
         }
@@ -308,6 +402,342 @@ fun AdminHomeScreen(
             modifier = Modifier.fillMaxSize()
         )
     }
+    }
+}
+
+private enum class AdminMoreDestination {
+    Gallery,
+    Profile
+}
+
+private enum class AdminScheduleQuickView {
+    Menu,
+    Day,
+    Week
+}
+
+@Composable
+private fun AdminScheduleOptionsTab(
+    clients: List<ClientDto>,
+    viewModel: ScheduleViewModel
+) {
+    val state by viewModel.uiState.collectAsState()
+    var selectedView by remember { mutableStateOf(AdminScheduleQuickView.Menu) }
+    val today = LocalDate.now()
+    val weekStart = today.with(DayOfWeek.SUNDAY)
+    val weekEnd = weekStart.plusDays(6)
+    val assignedIds = remember(clients) { clients.mapNotNull { it.id }.toSet() }
+    val clientNameById = remember(clients) {
+        clients.mapNotNull { client ->
+            val id = client.id ?: return@mapNotNull null
+            id to (client.fullName?.takeIf { it.isNotBlank() } ?: "(no name)")
+        }.toMap()
+    }
+    val scopedEvents = remember(state.events, assignedIds) {
+        state.events.filter { event -> event.clientId?.let { it in assignedIds } == true }
+            .sortedWith(compareBy<ScheduleEvent> { it.date }.thenBy { it.time })
+    }
+    val dayEvents = remember(scopedEvents, today) {
+        scopedEvents.filter { it.date == today }
+    }
+    val weekEvents = remember(scopedEvents, weekStart, weekEnd) {
+        scopedEvents.filter { !it.date.isBefore(weekStart) && !it.date.isAfter(weekEnd) }
+    }
+
+    when (selectedView) {
+        AdminScheduleQuickView.Menu -> {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                AdminScheduleOptionCard(
+                    title = "Schedule for the day",
+                    subtitle = if (dayEvents.isEmpty()) {
+                        "No sessions today"
+                    } else {
+                        "${dayEvents.size} session${if (dayEvents.size == 1) "" else "s"} today"
+                    },
+                    onClick = { selectedView = AdminScheduleQuickView.Day }
+                )
+                AdminScheduleOptionCard(
+                    title = "Schedule for the Week",
+                    subtitle = "${weekEvents.size} session${if (weekEvents.size == 1) "" else "s"} this week",
+                    onClick = { selectedView = AdminScheduleQuickView.Week }
+                )
+            }
+        }
+        AdminScheduleQuickView.Day -> AdminScheduleEventList(
+            title = "Schedule for the day",
+            subtitle = today.toDisplayDate(),
+            emptyText = "No sessions today.",
+            events = dayEvents,
+            clientNameById = clientNameById,
+            onBack = { selectedView = AdminScheduleQuickView.Menu }
+        )
+        AdminScheduleQuickView.Week -> AdminScheduleEventList(
+            title = "Schedule for the Week",
+            subtitle = "${weekStart.toDisplayDate()} - ${weekEnd.toDisplayDate()}",
+            emptyText = "No sessions this week.",
+            events = weekEvents,
+            clientNameById = clientNameById,
+            onBack = { selectedView = AdminScheduleQuickView.Menu }
+        )
+    }
+}
+
+@Composable
+private fun AdminScheduleOptionCard(
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.DateRange,
+                contentDescription = null,
+                tint = BurgundyPrimary,
+                modifier = Modifier.size(28.dp)
+            )
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun AdminScheduleEventList(
+    title: String,
+    subtitle: String,
+    emptyText: String,
+    events: List<ScheduleEvent>,
+    clientNameById: Map<String, String>,
+    onBack: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        TextButton(onClick = onBack) {
+            Icon(
+                Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Back to schedule",
+                tint = BurgundyPrimary,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(Modifier.width(4.dp))
+            Text("Schedule", color = BurgundyPrimary)
+        }
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleLarge,
+            color = BurgundyPrimary
+        )
+        Text(
+            text = subtitle,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.height(12.dp))
+
+        if (events.isEmpty()) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(
+                    text = emptyText,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 80.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(events, key = { it.id ?: "${it.date}-${it.time}-${it.title}" }) { event ->
+                    AdminScheduleEventSummaryCard(
+                        event = event,
+                        clientName = event.clientId?.let { clientNameById[it] }.orEmpty()
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AdminScheduleEventSummaryCard(
+    event: ScheduleEvent,
+    clientName: String
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = if (event.isPastDue) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
+            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = event.time.ifBlank { event.date.toDisplayDate() },
+                    style = MaterialTheme.typography.labelMedium,
+                    color = BurgundyPrimary
+                )
+                if (event.time.isNotBlank()) {
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = event.date.toDisplayDate(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Spacer(Modifier.weight(1f))
+                if (event.isCompleted) {
+                    AssistChip(
+                        onClick = {},
+                        label = { Text("Done") }
+                    )
+                }
+            }
+            Text(
+                text = event.title,
+                style = MaterialTheme.typography.titleSmall,
+                color = if (event.isPastDue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+            )
+            if (clientName.isNotBlank()) {
+                Text(
+                    text = clientName,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            if (event.notes.isNotBlank()) {
+                Text(
+                    text = event.notes,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2
+                )
+            }
+            if (event.isPastDue) {
+                Text(
+                    text = "Past due",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AdminMoreTab(
+    onOpenGallery: () -> Unit,
+    onOpenProfile: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        AdminMoreOptionCard(
+            title = "Gallery",
+            subtitle = "Transformation gallery",
+            icon = { Icon(Icons.Default.PhotoLibrary, contentDescription = null, tint = BurgundyPrimary) },
+            onClick = onOpenGallery
+        )
+        AdminMoreOptionCard(
+            title = "Profile",
+            subtitle = "Account settings and sign out",
+            icon = { Icon(Icons.Default.Person, contentDescription = null, tint = BurgundyPrimary) },
+            onClick = onOpenProfile
+        )
+    }
+}
+
+@Composable
+private fun AdminMoreOptionCard(
+    title: String,
+    subtitle: String,
+    icon: @Composable () -> Unit,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier.size(32.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                icon()
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }
 
@@ -562,10 +992,10 @@ private fun OverviewStatCard(
 @Composable
 fun ClientsTab(
     viewModel: AdminHomeViewModel = viewModel(),
-    onOpenDetails: (String) -> Unit,
     onOpenProfile: (String?) -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
+    val assignedClients = state.clients.filter { it.coachId != null }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -593,10 +1023,10 @@ fun ClientsTab(
                     }
                 }
             }
-            state.clients.isEmpty() -> {
+            assignedClients.isEmpty() -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
-                        "No clients yet. Tap + to add one.",
+                        "No assigned clients yet. Check New clients to claim new signups.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -607,20 +1037,7 @@ fun ClientsTab(
                     contentPadding = PaddingValues(bottom = 80.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Demo clients
-                    items(demoClientSummaries, key = { "demo_${it.id}" }) { demo ->
-                        ClientCard(
-                            fullName = demo.name,
-                            goal = demo.goal,
-                            lastActive = demo.lastActive,
-                            subtitle = "Plans, meals, progress",
-                            onClick = { onOpenDetails(demo.id) },
-                            onDelete = null // Can't delete demo data
-                        )
-                    }
-                    
-                    // Real clients
-                    items(state.clients, key = { it.id ?: it.userId }) { client ->
+                    items(assignedClients, key = { it.id ?: it.userId }) { client ->
                         ClientCard(
                             fullName = client.fullName ?: "(no name)",
                             goal = client.goal ?: "",
@@ -640,23 +1057,105 @@ fun ClientsTab(
     }
 }
 
-private fun buildClientMemberSummaryLine(
-    age: Int?,
-    heightCm: Int?,
-    weightKg: Int?,
-    goal: String
-): String {
-    val parts = mutableListOf<String>()
-    age?.let { parts.add("Age $it") }
-    heightCm?.takeIf { it > 0 }?.let {
-        val (ft, inc) = it.toFeetInches()
-        parts.add("${ft}' ${inc}\"")
+@Composable
+fun NewClientsTab(
+    clients: List<ClientDto>,
+    profileRolesByUserId: Map<String, String>,
+    onClaim: (String) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        if (clients.isEmpty()) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(
+                    "No new clients waiting to be claimed.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+            }
+            return
+        }
+
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 80.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(clients, key = { it.id ?: it.userId }) { client ->
+                NewClientCard(
+                    client = client,
+                    platformRole = profileRolesByUserId[client.userId],
+                    onClaim = {
+                        client.id?.let(onClaim)
+                    }
+                )
+            }
+        }
     }
-    weightKg?.takeIf { it > 0 }?.let { kg ->
-        formatWeightLbsFromKg(kg)?.let { parts.add(it) }
+}
+
+@Composable
+private fun NewClientCard(
+    client: ClientDto,
+    platformRole: String?,
+    onClaim: () -> Unit
+) {
+    val memberSummary = buildClientMemberSummaryLine(
+        client.age,
+        client.heightCm,
+        client.weightKg,
+        client.goal.orEmpty()
+    )
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = client.fullName ?: "(no name)",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            platformRole?.let { raw ->
+                Text(
+                    text = if (raw.equals("admin", ignoreCase = true)) "App login: Admin" else "App login: Client",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (raw.equals("admin", ignoreCase = true)) BurgundyPrimary.copy(alpha = 0.9f)
+                    else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Text(
+                text = if (memberSummary.isBlank()) {
+                    "No age, height, weight, or goal on file yet."
+                } else {
+                    memberSummary
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Button(
+                onClick = onClaim,
+                enabled = client.id != null,
+                colors = ButtonDefaults.buttonColors(containerColor = BurgundyPrimary),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Claim client")
+            }
+        }
     }
-    goal.trim().takeIf { it.isNotEmpty() }?.let { parts.add("Goal: $it") }
-    return parts.joinToString(" · ")
 }
 
 @Composable
@@ -1173,7 +1672,6 @@ fun AdminHomeScreenPreview() {
     Club360FitTheme {
         AdminHomeScreen(
             onOpenCoachNotifications = {},
-            onOpenClientDetails = {},
             onOpenClientProfile = {},
             onOpenClientHub = {},
             onSignOut = {}

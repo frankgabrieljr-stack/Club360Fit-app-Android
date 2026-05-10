@@ -33,7 +33,10 @@ class AdminHomeViewModel : ViewModel() {
     fun refreshCoachUnread() {
         viewModelScope.launch {
             _coachUnreadCount.value = runCatching {
-                val ids = ClientRepository.getClients().mapNotNull { it.id }.toSet()
+                val ids = ClientRepository.getClients()
+                    .filter { it.coachId != null }
+                    .mapNotNull { it.id }
+                    .toSet()
                 ClientNotificationRepository.coachUnreadCount(ids)
             }.getOrDefault(0)
         }
@@ -69,6 +72,19 @@ class AdminHomeViewModel : ViewModel() {
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     error = e.message ?: "Failed to delete client"
+                )
+            }
+        }
+    }
+
+    fun claimClient(id: String) {
+        viewModelScope.launch {
+            try {
+                ClientRepository.claimCoachAssignmentIfNeeded(id)
+                loadClients()
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    error = e.message ?: "Failed to claim client"
                 )
             }
         }

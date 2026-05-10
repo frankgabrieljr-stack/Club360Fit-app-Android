@@ -90,7 +90,6 @@ object ClientRepository {
     }
 
     suspend fun getClient(id: String): ClientDto = withContext(Dispatchers.IO) {
-        claimCoachAssignmentIfNeeded(id)
         client.postgrest["clients"].select {
             filter {
                 eq("id", id)

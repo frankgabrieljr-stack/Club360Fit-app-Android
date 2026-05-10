@@ -1,5 +1,6 @@
 package com.club360fit.app.ui.screens.admin
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.item
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -61,12 +63,17 @@ fun CoachHubNotificationsScreen(
     var replyTarget by remember { mutableStateOf<ClientNotificationDto?>(null) }
     var replyDraft by remember { mutableStateOf("") }
     var replyBusy by remember { mutableStateOf(false) }
+    var actionTarget by remember { mutableStateOf<ClientNotificationDto?>(null) }
+    var selectedClientId by remember { mutableStateOf<String?>(null) }
 
     fun reload() {
         scope.launch {
             loading = true
             try {
-                val coachClients = runCatching { ClientRepository.getClients() }.getOrNull().orEmpty()
+                val coachClients = runCatching { ClientRepository.getClients() }
+                    .getOrNull()
+                    .orEmpty()
+                    .filter { it.coachId != null }
                 val clientIds = coachClients.mapNotNull { it.id }.toSet()
                 clientNameById = coachClients
                     .mapNotNull { c ->
@@ -115,68 +122,130 @@ fun CoachHubNotificationsScreen(
                 Text("No coach updates yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         } else {
+            val groupedNotifications = items.groupBy { it.clientId }
+            val selectedId = selectedClientId
+            val selectedNotifications = selectedId?.let { groupedNotifications[it] }
             LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(padding),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                items(items, key = { it.id ?: "${it.clientId}_${it.createdAt}" }) { n ->
-                    val nId = n.id
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (n.coachReadAt == null) {
-                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
-                            } else {
-                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                if (selectedId != null && selectedNotifications != null) {
+                    item(key = "client_header_$selectedId") {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            TextButton(onClick = { selectedClientId = null }) {
+                                Text("All clients", color = BurgundyPrimary)
                             }
-                        )
-                    ) {
-                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            val clientLabel = clientNameById[n.clientId] ?: n.clientId.take(8)
                             Text(
-                                clientLabel,
-                                style = MaterialTheme.typography.labelMedium,
-                                color = BurgundyPrimary
+                                text = clientNameById[selectedId] ?: selectedId.take(8),
+                                style = MaterialTheme.typography.titleMedium,
+                                color = BurgundyPrimary,
+                                modifier = Modifier.padding(start = 4.dp)
                             )
-                            Text(n.title, style = MaterialTheme.typography.titleSmall, color = BurgundyPrimary)
-                            Text(n.body, style = MaterialTheme.typography.bodyMedium)
-                            n.createdAt?.let {
-                                Text(
-                                    formatPaymentInstant(it),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            val canReply = (n.kind ?: "").lowercase() == "workout_session_logged"
-                            if (canReply && nId != null) {
-                                TextButton(
-                                    onClick = {
-                                        replyTarget = n
-                                        replyDraft = ""
-                                    }
-                                ) {
-                                    Text("Reply", color = BurgundyPrimary)
+                        }
+                    }
+                    items(selectedNotifications, key = { it.id ?: "${it.clientId}_${it.createdAt}" }) { n ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { actionTarget = n },
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (n.coachReadAt == null) {
+                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+                                } else {
+                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                                }
+                            )
+                        ) {
+                            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Text(n.title, style = MaterialTheme.typography.titleSmall, color = BurgundyPrimary)
+                                Text(n.body, style = MaterialTheme.typography.bodyMedium)
+                                n.createdAt?.let {
+                                    Text(
+                                        formatPaymentInstant(it),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
                                 }
                             }
-                            if (nId != null) {
-                                TextButton(
-                                    onClick = {
-                                        scope.launch {
-                                            ClientNotificationRepository.markCoachReadAsCoach(nId)
-                                            reload()
-                                            onUnreadChanged()
-                                        }
-                                    }
-                                ) {
-                                    Text("Mark read", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                }
-                            }
+                        }
+                    }
+                } else {
+                    groupedNotifications.forEach { (clientId, clientNotifications) ->
+                        item(key = "client_tile_$clientId") {
+                            ClientNotificationGroupCard(
+                                clientName = clientNameById[clientId] ?: clientId.take(8),
+                                notifications = clientNotifications,
+                                onClick = { selectedClientId = clientId }
+                            )
                         }
                     }
                 }
             }
         }
+    }
+
+    actionTarget?.let { n ->
+        val nId = n.id
+        val canReply = (n.kind ?: "").lowercase() == "workout_session_logged"
+        AlertDialog(
+            onDismissRequest = { actionTarget = null },
+            title = { Text(n.title.ifBlank { "Update" }) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(n.body)
+                    n.createdAt?.let {
+                        Text(
+                            formatPaymentInstant(it),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Column {
+                    if (canReply && nId != null) {
+                        TextButton(
+                            onClick = {
+                                replyTarget = n
+                                replyDraft = ""
+                                actionTarget = null
+                            }
+                        ) { Text("Reply", color = BurgundyPrimary) }
+                    }
+                    TextButton(
+                        enabled = nId != null,
+                        onClick = {
+                            val id = nId ?: return@TextButton
+                            scope.launch {
+                                ClientNotificationRepository.markCoachReadAsCoach(id)
+                                actionTarget = null
+                                reload()
+                                onUnreadChanged()
+                            }
+                        }
+                    ) { Text("Mark read", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                    TextButton(
+                        enabled = nId != null,
+                        onClick = {
+                            val id = nId ?: return@TextButton
+                            scope.launch {
+                                ClientNotificationRepository.deleteForCoach(id)
+                                actionTarget = null
+                                reload()
+                                onUnreadChanged()
+                            }
+                        }
+                    ) { Text("Delete", color = MaterialTheme.colorScheme.error) }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { actionTarget = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 
     replyTarget?.let { target ->
@@ -230,5 +299,48 @@ fun CoachHubNotificationsScreen(
                 }
             }
         )
+    }
+}
+
+@Composable
+private fun ClientNotificationGroupCard(
+    clientName: String,
+    notifications: List<ClientNotificationDto>,
+    onClick: () -> Unit
+) {
+    val unread = notifications.count { it.coachReadAt == null }
+    val latest = notifications.firstOrNull()
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(
+            containerColor = if (unread > 0) {
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+            } else {
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+            }
+        )
+    ) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(clientName, style = MaterialTheme.typography.titleMedium, color = BurgundyPrimary)
+            Text(
+                text = if (unread == 0) "No new notifications" else "$unread new notification${if (unread == 1) "" else "s"}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (unread > 0) BurgundyPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = "${notifications.size} total update${if (notifications.size == 1) "" else "s"}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            latest?.let {
+                Text(
+                    text = "Latest: ${it.title}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
     }
 }

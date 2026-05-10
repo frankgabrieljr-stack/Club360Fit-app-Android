@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -48,6 +49,7 @@ fun MyNotificationsScreen(
     val scope = rememberCoroutineScope()
     var items by remember { mutableStateOf<List<ClientNotificationDto>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
+    var selectedNotification by remember { mutableStateOf<ClientNotificationDto?>(null) }
 
     fun reload() {
         scope.launch {
@@ -107,12 +109,7 @@ fun MyNotificationsScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
-                                n.id?.let { id ->
-                                    scope.launch {
-                                        ClientNotificationRepository.markRead(id)
-                                        reload()
-                                    }
-                                }
+                                selectedNotification = n
                             },
                         colors = CardDefaults.cardColors(
                             containerColor = if (n.readAt == null) {
@@ -137,5 +134,51 @@ fun MyNotificationsScreen(
                 }
             }
         }
+    }
+
+    selectedNotification?.let { n ->
+        val nId = n.id
+        AlertDialog(
+            onDismissRequest = { selectedNotification = null },
+            title = { Text(n.title.ifBlank { "Update" }) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(n.body)
+                    n.createdAt?.let {
+                        Text(
+                            formatPaymentInstant(it),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = nId != null,
+                    onClick = {
+                        val id = nId ?: return@TextButton
+                        scope.launch {
+                            ClientNotificationRepository.markRead(id)
+                            selectedNotification = null
+                            reload()
+                        }
+                    }
+                ) { Text("Mark read") }
+            },
+            dismissButton = {
+                TextButton(
+                    enabled = nId != null,
+                    onClick = {
+                        val id = nId ?: return@TextButton
+                        scope.launch {
+                            ClientNotificationRepository.deleteForMember(id)
+                            selectedNotification = null
+                            reload()
+                        }
+                    }
+                ) { Text("Delete") }
+            }
+        )
     }
 }

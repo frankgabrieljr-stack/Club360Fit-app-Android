@@ -10,8 +10,14 @@ struct AdminHomeView: View {
             }
             .tabItem { Label("Hub", systemImage: "square.grid.2x2.fill") }
 
+            AdminScheduleTab()
+                .tabItem { Label("Schedule", systemImage: "calendar") }
+
+            AdminNewClientsTab()
+                .tabItem { Label("New clients", systemImage: "person.badge.plus") }
+
             AdminClientsTab()
-                .tabItem { Label("Clients", systemImage: "person.3.fill") }
+                .tabItem { Label("My clients", systemImage: "person.3.fill") }
 
             NavigationStack {
                 CoachMealPhotoInboxView()
@@ -30,6 +36,320 @@ struct AdminHomeView: View {
         }
         .tint(Club360Theme.burgundy)
         .preferredColorScheme(.light)
+    }
+}
+
+// MARK: - Schedule tab
+
+private struct AdminScheduleTab: View {
+    @Environment(Club360AuthSession.self) private var auth: Club360AuthSession
+    @State private var model = AdminScheduleModel()
+
+    private var todaysEvents: [ScheduleEventDTO] {
+        let todayKey = Club360DateFormats.dayString(Date())
+        return model.events(on: todayKey)
+    }
+
+    private var weekEvents: [ScheduleEventDTO] {
+        let cal = Calendar.current
+        let weekStart = Calendar.weekStartSunday(containing: Date())
+        let weekEnd = cal.date(byAdding: .day, value: 6, to: weekStart) ?? weekStart
+        return model.events(from: weekStart, through: weekEnd)
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Club360ScreenBackground()
+
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 22) {
+                        HStack(alignment: .center, spacing: 14) {
+                            Image(systemName: "calendar")
+                                .font(.title.weight(.semibold))
+                                .foregroundStyle(Club360Theme.tealDark)
+                                .frame(width: 56, height: 56)
+                                .background(.white.opacity(0.5), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Schedule")
+                                    .font(.largeTitle.weight(.bold))
+                                    .foregroundStyle(Club360Theme.burgundy)
+                                Text("Day and week views")
+                                    .font(.title3.weight(.semibold))
+                                    .foregroundStyle(Club360Theme.burgundy)
+                            }
+                        }
+                        .padding(.top, 4)
+
+                        if model.isLoading {
+                            ProgressView("Loading schedule...")
+                                .tint(Club360Theme.tealDark)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                        }
+
+                        if let err = model.errorMessage {
+                            Text(err)
+                                .font(.footnote)
+                                .foregroundStyle(.red)
+                                .padding()
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .club360Glass(cornerRadius: 22)
+                        }
+
+                        VStack(spacing: 12) {
+                            NavigationLink {
+                                AdminScheduleListView(
+                                    title: "Schedule for the day",
+                                    subtitle: Club360DateFormats.displayDay(from: Date()),
+                                    emptyTitle: "No sessions today",
+                                    events: todaysEvents,
+                                    clientNameById: model.clientNameById
+                                )
+                            } label: {
+                                AdminScheduleOptionRow(
+                                    title: "Schedule for the day",
+                                    subtitle: daySubtitle,
+                                    systemImage: "sun.max.fill"
+                                )
+                            }
+                            .buttonStyle(.plain)
+
+                            NavigationLink {
+                                AdminScheduleListView(
+                                    title: "Schedule for the Week",
+                                    subtitle: weekSubtitle,
+                                    emptyTitle: "No sessions this week",
+                                    events: weekEvents,
+                                    clientNameById: model.clientNameById
+                                )
+                            } label: {
+                                AdminScheduleOptionRow(
+                                    title: "Schedule for the Week",
+                                    subtitle: "\(weekEvents.count) session\(weekEvents.count == 1 ? "" : "s") this week",
+                                    systemImage: "calendar.badge.clock"
+                                )
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, 18)
+                    .padding(.bottom, 28)
+                }
+            }
+            .navigationTitle("Schedule")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+            .task {
+                await model.load(coachUserId: auth.session?.user.id.uuidString)
+            }
+            .refreshable {
+                await model.load(coachUserId: auth.session?.user.id.uuidString)
+            }
+        }
+    }
+
+    private var daySubtitle: String {
+        todaysEvents.isEmpty
+        ? "No sessions today"
+        : "\(todaysEvents.count) session\(todaysEvents.count == 1 ? "" : "s") today"
+    }
+
+    private var weekSubtitle: String {
+        let weekStart = Calendar.weekStartSunday(containing: Date())
+        let weekEnd = Calendar.current.date(byAdding: .day, value: 6, to: weekStart) ?? weekStart
+        return "\(Club360DateFormats.displayDay(from: weekStart)) - \(Club360DateFormats.displayDay(from: weekEnd))"
+    }
+}
+
+private struct AdminScheduleOptionRow: View {
+    let title: String
+    let subtitle: String
+    let systemImage: String
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: systemImage)
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(Club360Theme.burgundy)
+                .frame(width: 36)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(Club360Theme.cardTitle)
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(Club360Theme.captionOnGlass)
+            }
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Club360Theme.captionOnGlass.opacity(0.8))
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .club360Glass(cornerRadius: 26)
+    }
+}
+
+private struct AdminScheduleListView: View {
+    let title: String
+    let subtitle: String
+    let emptyTitle: String
+    let events: [ScheduleEventDTO]
+    let clientNameById: [String: String]
+
+    var body: some View {
+        ZStack {
+            Club360ScreenBackground()
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(title)
+                            .font(.largeTitle.weight(.bold))
+                            .foregroundStyle(Club360Theme.burgundy)
+                        Text(subtitle)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Club360Theme.captionOnGlass)
+                    }
+                    .padding(.top, 4)
+
+                    if events.isEmpty {
+                        ContentUnavailableView(
+                            emptyTitle,
+                            systemImage: "calendar",
+                            description: Text("Scheduled sessions appear here once they are assigned.")
+                        )
+                        .padding(.top, 24)
+                    } else {
+                        ForEach(events, id: \.id) { event in
+                            AdminScheduleEventRow(
+                                event: event,
+                                clientName: event.clientId.flatMap { clientNameById[$0] }
+                            )
+                        }
+                    }
+                }
+                .padding(.horizontal, 18)
+                .padding(.bottom, 28)
+            }
+        }
+        .navigationTitle(title)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+    }
+}
+
+private struct AdminScheduleEventRow: View {
+    let event: ScheduleEventDTO
+    let clientName: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(event.time)
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(Club360Theme.tealDark)
+                Text(Club360DateFormats.displayDay(fromPostgresDay: event.date))
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Club360Theme.captionOnGlass)
+                Spacer()
+                if event.isCompleted {
+                    Text("Done")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(Club360Theme.mintDeep)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(.white.opacity(0.55), in: Capsule())
+                }
+            }
+
+            Text(event.title)
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(Club360Theme.cardTitle)
+
+            if let clientName, !clientName.isEmpty {
+                Text(clientName)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Club360Theme.burgundy)
+            }
+
+            if let notes = event.notes?.trimmingCharacters(in: .whitespacesAndNewlines), !notes.isEmpty {
+                Text(notes)
+                    .font(.caption)
+                    .foregroundStyle(Club360Theme.captionOnGlass)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .club360Glass(cornerRadius: 24)
+    }
+}
+
+@Observable
+@MainActor
+private final class AdminScheduleModel {
+    var isLoading = false
+    var errorMessage: String?
+    var events: [ScheduleEventDTO] = []
+    var clientNameById: [String: String] = [:]
+
+    func load(coachUserId: String?) async {
+        guard let coachUserId else {
+            errorMessage = "Not signed in."
+            return
+        }
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+
+        do {
+            async let clientsTask = ClientDataService.fetchClientsForCoach()
+            async let eventsTask = ClientDataService.fetchScheduleEventsForCoach(coachUserId: coachUserId)
+            let (clients, fetchedEvents) = try await (clientsTask, eventsTask)
+            let assignedClients = clients.filter {
+                !($0.coachId?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
+            }
+            let assignedIds = Set(assignedClients.compactMap(\.id))
+
+            clientNameById = Dictionary(uniqueKeysWithValues: assignedClients.compactMap { client in
+                guard let id = client.id, !id.isEmpty else { return nil }
+                return (id, AdminViewModel.listTitle(for: client))
+            })
+            events = fetchedEvents
+                .filter { event in
+                    guard let clientId = event.clientId else { return false }
+                    return assignedIds.contains(clientId)
+                }
+                .sorted(by: Self.eventSort)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func events(on day: String) -> [ScheduleEventDTO] {
+        events.filter { $0.date == day }
+    }
+
+    func events(from start: Date, through end: Date) -> [ScheduleEventDTO] {
+        let cal = Calendar.current
+        let startDay = cal.startOfDay(for: start)
+        let endDay = cal.startOfDay(for: end)
+        return events.filter { event in
+            guard let eventDate = Club360DateFormats.postgresDay.date(from: event.date) else { return false }
+            let day = cal.startOfDay(for: eventDate)
+            return day >= startDay && day <= endDay
+        }
+    }
+
+    private static func eventSort(_ lhs: ScheduleEventDTO, _ rhs: ScheduleEventDTO) -> Bool {
+        if lhs.date != rhs.date { return lhs.date < rhs.date }
+        return lhs.time < rhs.time
     }
 }
 
@@ -63,16 +383,16 @@ private struct AdminClientsTab: View {
                                 .club360Glass(cornerRadius: 22)
                         }
 
-                        if !model.isLoading, model.errorMessage == nil, model.clients.isEmpty {
+                        if !model.isLoading, model.errorMessage == nil, model.assignedClients.isEmpty {
                             ContentUnavailableView(
-                                "No clients yet",
+                                "No assigned clients yet",
                                 systemImage: "person.3",
-                                description: Text("When members are linked to your coach account in Supabase, they appear here.")
+                                description: Text("New signups appear in New clients until a coach claims them.")
                             )
                             .padding(.top, 24)
                         }
 
-                        ForEach(model.clients, id: \.stableId) { client in
+                        ForEach(model.assignedClients, id: \.stableId) { client in
                             if let cid = client.id, !cid.isEmpty {
                                 NavigationLink {
                                     AdminClientHubView(clientId: cid, displayTitle: AdminViewModel.listTitle(for: client))
@@ -128,6 +448,92 @@ private struct AdminClientsTab: View {
     }
 }
 
+private struct AdminNewClientsTab: View {
+    @State private var model = AdminViewModel()
+    @State private var claimingClientId: String?
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Club360ScreenBackground()
+
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 22) {
+                        HStack(alignment: .center, spacing: 14) {
+                            Image(systemName: "person.badge.plus")
+                                .font(.title.weight(.semibold))
+                                .foregroundStyle(Club360Theme.tealDark)
+                                .frame(width: 56, height: 56)
+                                .background(.white.opacity(0.5), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("New clients")
+                                    .font(.largeTitle.weight(.bold))
+                                    .foregroundStyle(Club360Theme.burgundy)
+                                Text("Review intake and claim members")
+                                    .font(.title3.weight(.semibold))
+                                    .foregroundStyle(Club360Theme.burgundy)
+                            }
+                        }
+                        .padding(.top, 4)
+
+                        if model.isLoading {
+                            ProgressView("Loading new clients…")
+                                .tint(Club360Theme.tealDark)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                        }
+
+                        if let err = model.errorMessage {
+                            Text(err)
+                                .font(.footnote)
+                                .foregroundStyle(.red)
+                                .padding()
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .club360Glass(cornerRadius: 22)
+                        }
+
+                        if !model.isLoading, model.errorMessage == nil, model.newClients.isEmpty {
+                            ContentUnavailableView(
+                                "No new clients",
+                                systemImage: "person.badge.plus",
+                                description: Text("New member signups appear here until a coach claims them.")
+                            )
+                            .padding(.top, 24)
+                        }
+
+                        ForEach(model.newClients, id: \.stableId) { client in
+                            NewClientClaimRow(
+                                client: client,
+                                platformRole: model.profileRolesByUserId[client.userId],
+                                isClaiming: claimingClientId == client.id,
+                                onClaim: {
+                                    guard let cid = client.id, !cid.isEmpty else { return }
+                                    claimingClientId = cid
+                                    Task {
+                                        await model.claimClient(cid)
+                                        claimingClientId = nil
+                                    }
+                                }
+                            )
+                        }
+                    }
+                    .padding(.horizontal, 18)
+                    .padding(.bottom, 28)
+                }
+            }
+            .navigationTitle("New clients")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+            .task {
+                await model.load()
+            }
+            .refreshable {
+                await model.load()
+            }
+        }
+    }
+}
+
 private struct AdminClientRow: View {
     let title: String
     let subtitle: String
@@ -159,6 +565,56 @@ private struct AdminClientRow: View {
             Image(systemName: "chevron.right")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(Club360Theme.captionOnGlass.opacity(0.85))
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .club360Glass(cornerRadius: 28)
+    }
+}
+
+private struct NewClientClaimRow: View {
+    let client: ClientDTO
+    var platformRole: String? = nil
+    let isClaiming: Bool
+    let onClaim: () -> Void
+
+    private var summary: String {
+        client.memberSummaryLine.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(AdminViewModel.listTitle(for: client))
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(Club360Theme.cardTitle)
+                if let platformRole {
+                    Text(platformRole == "admin" ? "App login: Admin" : "App login: Client")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(platformRole == "admin" ? Club360Theme.tealDark : Club360Theme.captionOnGlass)
+                }
+                Text(summary.isEmpty ? "No age, height, weight, or goal on file yet." : summary)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(summary.isEmpty ? Club360Theme.captionOnGlass : Club360Theme.cardTitle)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Button {
+                onClaim()
+            } label: {
+                HStack {
+                    if isClaiming {
+                        ProgressView()
+                            .tint(.white)
+                    }
+                    Text(isClaiming ? "Claiming…" : "Claim client")
+                        .font(.subheadline.weight(.semibold))
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(Club360Theme.burgundy)
+            .disabled(isClaiming || client.id?.isEmpty != false)
         }
         .padding(18)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -280,6 +736,27 @@ struct AdminClientHubView: View {
                         }
                     }
                     .padding(.top, 4)
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Client info")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(Club360Theme.captionOnGlass)
+                            .textCase(.uppercase)
+                        if homeModel.memberProfileSummaryLine.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            Text("No age, height, weight, or goal on file yet. They appear here when set on the client record.")
+                                .font(.footnote)
+                                .foregroundStyle(Club360Theme.captionOnGlass)
+                                .fixedSize(horizontal: false, vertical: true)
+                        } else {
+                            Text(homeModel.memberProfileSummaryLine)
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(Club360Theme.cardTitle)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    .padding(18)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .club360Glass(cornerRadius: 22)
 
                     VStack(alignment: .leading, spacing: 10) {
                         HStack(alignment: .center, spacing: 10) {

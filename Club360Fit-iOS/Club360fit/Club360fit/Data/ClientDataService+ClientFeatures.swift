@@ -170,7 +170,7 @@ extension ClientDataService {
     // MARK: - Notifications (`client_notifications`)
 
     static func fetchClientNotifications(clientId: String, limit: Int = 40) async throws -> [ClientNotificationDTO] {
-        try await svc
+        let rows: [ClientNotificationDTO] = try await svc
             .from("client_notifications")
             .select()
             .eq("client_id", value: clientId)
@@ -178,6 +178,19 @@ extension ClientDataService {
             .limit(limit)
             .execute()
             .value
+        return rows.filter { $0.clientDeletedAt == nil }
+    }
+
+    static func fetchClientNotificationsForCoach(clientId: String, limit: Int = 40) async throws -> [ClientNotificationDTO] {
+        let rows: [ClientNotificationDTO] = try await svc
+            .from("client_notifications")
+            .select()
+            .eq("client_id", value: clientId)
+            .order("created_at", ascending: false)
+            .limit(limit)
+            .execute()
+            .value
+        return rows.filter { $0.coachDeletedAt == nil }
     }
 
     static func unreadNotificationCount(clientId: String) async throws -> Int {
@@ -187,7 +200,7 @@ extension ClientDataService {
 
     /// Coach inbox for one client: unread until `coach_read_at` is set (independent of member `read_at`).
     static func unreadCoachNotificationCountForClient(clientId: String) async throws -> Int {
-        let rows = try await fetchClientNotifications(clientId: clientId, limit: 200)
+        let rows = try await fetchClientNotificationsForCoach(clientId: clientId, limit: 200)
         return rows.filter { $0.coachReadAt == nil }.count
     }
 
@@ -211,11 +224,24 @@ extension ClientDataService {
             .execute()
     }
 
-    /// Permanently removes a row (RLS: member on own visible rows, coach on coached clients).
-    static func deleteClientNotification(notificationId: String) async throws {
+    /// Hides one row from the member inbox only; coach inbox remains untouched.
+    static func deleteClientNotificationForMember(notificationId: String) async throws {
+        let now = ISO8601DateFormatter().string(from: Date())
+        let patch = ClientNotificationDeletedAtPatch(clientDeletedAt: now)
         try await svc
             .from("client_notifications")
-            .delete()
+            .update(patch)
+            .eq("id", value: notificationId)
+            .execute()
+    }
+
+    /// Hides one row from coach inboxes only; member inbox remains untouched.
+    static func deleteClientNotificationForCoach(notificationId: String) async throws {
+        let now = ISO8601DateFormatter().string(from: Date())
+        let patch = CoachNotificationDeletedAtPatch(coachDeletedAt: now)
+        try await svc
+            .from("client_notifications")
+            .update(patch)
             .eq("id", value: notificationId)
             .execute()
     }

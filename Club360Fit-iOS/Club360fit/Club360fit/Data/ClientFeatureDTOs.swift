@@ -245,6 +245,8 @@ struct ClientNotificationDTO: Decodable, Sendable, Identifiable {
     let visibleToClient: Bool
     let readAt: String?
     let coachReadAt: String?
+    let clientDeletedAt: String?
+    let coachDeletedAt: String?
     let createdAt: String?
 
     enum CodingKeys: String, CodingKey {
@@ -258,6 +260,8 @@ struct ClientNotificationDTO: Decodable, Sendable, Identifiable {
         case visibleToClient = "visible_to_client"
         case readAt = "read_at"
         case coachReadAt = "coach_read_at"
+        case clientDeletedAt = "client_deleted_at"
+        case coachDeletedAt = "coach_deleted_at"
         case createdAt = "created_at"
     }
 
@@ -273,6 +277,8 @@ struct ClientNotificationDTO: Decodable, Sendable, Identifiable {
         visibleToClient = try c.decodeIfPresent(Bool.self, forKey: .visibleToClient) ?? true
         readAt = try c.decodeIfPresent(String.self, forKey: .readAt)
         coachReadAt = try c.decodeIfPresent(String.self, forKey: .coachReadAt)
+        clientDeletedAt = try c.decodeIfPresent(String.self, forKey: .clientDeletedAt)
+        coachDeletedAt = try c.decodeIfPresent(String.self, forKey: .coachDeletedAt)
         createdAt = try c.decodeIfPresent(String.self, forKey: .createdAt)
     }
 
@@ -298,6 +304,16 @@ struct NotificationReadAtPatch: Encodable, Sendable {
 struct CoachNotificationReadAtPatch: Encodable, Sendable {
     let coachReadAt: String
     enum CodingKeys: String, CodingKey { case coachReadAt = "coach_read_at" }
+}
+
+struct ClientNotificationDeletedAtPatch: Encodable, Sendable {
+    let clientDeletedAt: String
+    enum CodingKeys: String, CodingKey { case clientDeletedAt = "client_deleted_at" }
+}
+
+struct CoachNotificationDeletedAtPatch: Encodable, Sendable {
+    let coachDeletedAt: String
+    enum CodingKeys: String, CodingKey { case coachDeletedAt = "coach_deleted_at" }
 }
 
 struct ClientNotificationInsert: Encodable, Sendable {

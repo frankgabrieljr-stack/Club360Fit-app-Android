@@ -16,5 +16,7 @@ data class ClientNotificationDto(
     @SerialName("ref_type") val refType: String? = null,
     @SerialName("ref_id") val refId: String? = null,
     @SerialName("visible_to_client") val visibleToClient: Boolean? = null,
-    @SerialName("coach_read_at") val coachReadAt: String? = null
+    @SerialName("coach_read_at") val coachReadAt: String? = null,
+    @SerialName("client_deleted_at") val clientDeletedAt: String? = null,
+    @SerialName("coach_deleted_at") val coachDeletedAt: String? = null
 )

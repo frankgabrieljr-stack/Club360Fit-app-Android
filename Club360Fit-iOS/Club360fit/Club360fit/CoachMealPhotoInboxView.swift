@@ -134,20 +134,25 @@ private final class CoachMealPhotoInboxViewModel {
             async let logsTask = ClientDataService.listMealPhotoLogsForCoachInbox()
             async let clientsTask = ClientDataService.fetchClientsForCoach()
             let (logs, clients) = try await (logsTask, clientsTask)
-            let titleByClientId = Dictionary(uniqueKeysWithValues: clients.compactMap { c -> (String, String)? in
+            let assignedClients = clients.filter {
+                !($0.coachId?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
+            }
+            let assignedIds = Set(assignedClients.compactMap(\.id))
+            let scopedLogs = logs.filter { assignedIds.contains($0.clientId) }
+            let titleByClientId = Dictionary(uniqueKeysWithValues: assignedClients.compactMap { c -> (String, String)? in
                 guard let id = c.id, !id.isEmpty else { return nil }
                 return (id, AdminViewModel.listTitle(for: c))
             })
 
             var order: [String] = []
             var seen = Set<String>()
-            for log in logs {
+            for log in scopedLogs {
                 if !seen.contains(log.clientId) {
                     seen.insert(log.clientId)
                     order.append(log.clientId)
                 }
             }
-            let byClient = Dictionary(grouping: logs) { $0.clientId }
+            let byClient = Dictionary(grouping: scopedLogs) { $0.clientId }
             groups = order.map { cid in
                 let name = displayName(forClientId: cid, titleByClientId: titleByClientId)
                 let clientLogs = (byClient[cid] ?? []).sorted { a, b in

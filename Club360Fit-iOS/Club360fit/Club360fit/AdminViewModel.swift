@@ -11,6 +11,18 @@ final class AdminViewModel {
     /// `clients.user_id` → `public.profiles.role` (`admin` / `client`).
     var profileRolesByUserId: [String: String] = [:]
 
+    var assignedClients: [ClientDTO] {
+        clients.filter { client in
+            !(client.coachId?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
+        }
+    }
+
+    var newClients: [ClientDTO] {
+        clients.filter { client in
+            client.coachId?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true
+        }
+    }
+
     func load() async {
         isLoading = true
         errorMessage = nil
@@ -30,6 +42,15 @@ final class AdminViewModel {
             errorMessage = error.localizedDescription
             clients = []
             profileRolesByUserId = [:]
+        }
+    }
+
+    func claimClient(_ clientId: String) async {
+        do {
+            try await ClientDataService.claimCoachAssignmentIfNeeded(clientId: clientId)
+            await load()
+        } catch {
+            errorMessage = error.localizedDescription
         }
     }
 
