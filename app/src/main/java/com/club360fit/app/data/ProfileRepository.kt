@@ -38,6 +38,22 @@ object ProfileRepository {
         out
     }
 
+    suspend fun getProfileForUserId(userId: String): CoachDirectoryProfileDto? = withContext(Dispatchers.IO) {
+        val trimmed = userId.trim()
+        if (trimmed.isEmpty()) return@withContext null
+        try {
+            client.postgrest["profiles"]
+                .select {
+                    filter { eq("id", trimmed) }
+                    limit(1)
+                }
+                .decodeList<CoachDirectoryProfileDto>()
+                .firstOrNull()
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     /** Coach accounts (`profiles.role` = admin) so admins can copy another coach’s Auth user id. Requires admin JWT (RLS). */
     suspend fun fetchCoachDirectoryProfiles(): List<CoachDirectoryProfileDto> = withContext(Dispatchers.IO) {
         client.postgrest["profiles"]

@@ -26,6 +26,7 @@ import kotlinx.serialization.json.jsonPrimitive
 data class AuthUiState(
     val name: String = "",
     val age: String = "",
+    val birthDate: String = "",
     val height: String = "",
     val weight: String = "",
     val phone: String = "",
@@ -74,6 +75,7 @@ class AuthViewModel : ViewModel() {
 
     fun updateName(value: String) = _uiState.update { it.copy(name = value) }
     fun updateAge(value: String) = _uiState.update { it.copy(age = value) }
+    fun updateBirthDate(value: String) = _uiState.update { it.copy(birthDate = value) }
     fun updateHeight(value: String) = _uiState.update { it.copy(height = value) }
     fun updateWeight(value: String) = _uiState.update { it.copy(weight = value) }
     fun updatePhone(value: String) = _uiState.update { it.copy(phone = value) }
@@ -140,6 +142,7 @@ class AuthViewModel : ViewModel() {
                             data = buildJsonObject {
                                 put("name", JsonPrimitive(state.name))
                                 put("age", JsonPrimitive(state.age))
+                                put("birth_date", JsonPrimitive(state.birthDate))
                                 put("height_cm", JsonPrimitive(state.height))
                                 put("weight_kg", JsonPrimitive(state.weight))
                                 put("phone", JsonPrimitive(state.phone))

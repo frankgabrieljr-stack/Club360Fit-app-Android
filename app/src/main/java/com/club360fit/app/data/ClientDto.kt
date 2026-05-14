@@ -28,11 +28,20 @@ data class ClientDto(
 
     val phone: String? = null,
 
+    @SerialName("birth_date")
+    val birthDate: String? = null,
+
     @SerialName("medical_conditions")
     val medicalConditions: String? = null,
 
     @SerialName("food_restrictions")
     val foodRestrictions: String? = null,
+
+    @SerialName("meals_per_day")
+    val mealsPerDay: String? = null,
+
+    @SerialName("workout_frequency")
+    val workoutFrequency: String? = null,
 
     val goal: String? = null,
 

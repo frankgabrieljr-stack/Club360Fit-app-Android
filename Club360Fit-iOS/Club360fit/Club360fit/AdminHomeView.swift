@@ -737,11 +737,29 @@ struct AdminClientHubView: View {
                     }
                     .padding(.top, 4)
 
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Client info")
+                    VStack(alignment: .leading, spacing: 14) {
+                        Text("Client details")
                             .font(.caption.weight(.bold))
                             .foregroundStyle(Club360Theme.captionOnGlass)
                             .textCase(.uppercase)
+
+                        HStack(alignment: .top, spacing: 14) {
+                            memberAvatar
+                                .frame(width: 92, height: 92)
+                                .clipShape(Circle())
+                                .overlay(
+                                    Circle()
+                                        .stroke(Color.black.opacity(0.1), lineWidth: 1)
+                                )
+
+                            VStack(alignment: .leading, spacing: 8) {
+                                detailRow("Email", homeModel.memberEmail ?? "Not available")
+                                detailRow("Phone", homeModel.memberPhone ?? "Not provided")
+                                detailRow("Birthday", birthdayLabel)
+                                detailRow("Member since", memberSinceLabel)
+                            }
+                        }
+
                         if homeModel.memberProfileSummaryLine.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                             Text("No age, height, weight, or goal on file yet. They appear here when set on the client record.")
                                 .font(.footnote)
@@ -753,6 +771,13 @@ struct AdminClientHubView: View {
                                 .foregroundStyle(Club360Theme.cardTitle)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
+
+                        Divider().opacity(0.35)
+
+                        detailRow("Medical notes", homeModel.memberMedicalConditions ?? "Not provided")
+                        detailRow("Food restrictions", homeModel.memberFoodRestrictions ?? "Not provided")
+                        detailRow("Meals per day", homeModel.memberMealsPerDay ?? "Not provided")
+                        detailRow("Workout frequency", homeModel.memberWorkoutFrequency ?? "Not provided")
                     }
                     .padding(18)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -914,7 +939,28 @@ struct AdminClientHubView: View {
 
     private var memberAvatar: some View {
         Group {
-            if let uid = homeModel.memberAuthUserId,
+            if let rawURL = homeModel.memberAvatarURLString,
+               let url = URL(string: rawURL) {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .empty:
+                        ZStack {
+                            Club360Theme.creamWarm
+                            ProgressView()
+                                .tint(Club360Theme.burgundy)
+                        }
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    default:
+                        Image("LogoBurgundy")
+                            .resizable()
+                            .scaledToFit()
+                            .padding(6)
+                    }
+                }
+            } else if let uid = homeModel.memberAuthUserId,
                let url = ClientDataService.publicAvatarURLForAuthUserId(uid) {
                 AsyncImage(url: url) { phase in
                     switch phase {
@@ -941,6 +987,29 @@ struct AdminClientHubView: View {
                     .scaledToFit()
                     .padding(4)
             }
+        }
+    }
+
+    private var birthdayLabel: String {
+        guard let raw = homeModel.memberBirthDate else { return "Not provided" }
+        return Club360DateFormats.displayDay(fromPostgresDay: raw)
+    }
+
+    private var memberSinceLabel: String {
+        guard let date = homeModel.memberSinceStartOfDay else { return "Not available" }
+        return Club360DateFormats.displayDay(from: date)
+    }
+
+    private func detailRow(_ label: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(label)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(Club360Theme.captionOnGlass)
+                .textCase(.uppercase)
+            Text(value)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(Club360Theme.cardTitle)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 

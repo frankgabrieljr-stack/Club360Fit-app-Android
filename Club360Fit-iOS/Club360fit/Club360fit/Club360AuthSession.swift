@@ -51,6 +51,7 @@ final class Club360AuthSession {
         password: String,
         name: String,
         age: String,
+        birthDate: String,
         height: String,
         weight: String,
         phone: String,
@@ -65,6 +66,7 @@ final class Club360AuthSession {
         let data: [String: AnyJSON] = [
             "name": .string(name),
             "age": .string(age),
+            "birth_date": .string(birthDate),
             "height_cm": .string(height),
             "weight_kg": .string(weight),
             "phone": .string(phone),

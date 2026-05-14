@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.club360fit.app.data.ClientDto
 import com.club360fit.app.data.ClientRepository
+import com.club360fit.app.data.CoachDirectoryProfileDto
 import com.club360fit.app.data.ProfileRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,6 +21,7 @@ data class ClientProfileUiState(
     ),
     /** `public.profiles.role` for `client.userId` (`admin` / `client`). */
     val platformAccountRole: String? = null,
+    val profile: CoachDirectoryProfileDto? = null,
     val error: String? = null
 )
 
@@ -34,13 +36,17 @@ class ClientProfileViewModel(
             viewModelScope.launch {
                 try {
                     val dto = ClientRepository.getClient(clientId)
-                    val role = dto.userId.takeIf { it.isNotBlank() }?.let { uid ->
+                    val profile = dto.userId.takeIf { it.isNotBlank() }?.let { uid ->
+                        ProfileRepository.getProfileForUserId(uid)
+                    }
+                    val role = profile?.role ?: dto.userId.takeIf { it.isNotBlank() }?.let { uid ->
                         ProfileRepository.getRoleForUserId(uid)
                     }
                     _uiState.value = ClientProfileUiState(
                         isLoading = false,
                         client = dto,
-                        platformAccountRole = role
+                        platformAccountRole = role,
+                        profile = profile
                     )
                 } catch (e: Exception) {
                     _uiState.value = _uiState.value.copy(

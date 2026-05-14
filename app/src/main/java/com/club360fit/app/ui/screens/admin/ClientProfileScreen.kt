@@ -12,7 +12,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.background
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
@@ -23,6 +25,7 @@ import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -53,6 +56,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -79,6 +85,8 @@ import com.club360fit.app.ui.utils.fromPounds
 import com.club360fit.app.ui.utils.toFeetInches
 import com.club360fit.app.ui.utils.SubmitResultMessages
 import com.club360fit.app.ui.utils.toPounds
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -185,9 +193,11 @@ fun ClientProfileScreen(
                 verticalArrangement = Arrangement.Top
             ) {
                 val c = state.client
+                val profile = state.profile
+                val context = LocalContext.current
                 // Summary card
                 Text(
-                    text = "Client Profile Summary",
+                    text = "Client Profile Details",
                     style = MaterialTheme.typography.titleMedium,
                     color = BurgundyPrimary
                 )
@@ -204,49 +214,81 @@ fun ClientProfileScreen(
                     )
                 }
                 Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    text = "Client info",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.height(6.dp))
                 val memberSummary = buildClientMemberSummaryLine(
                     c.age,
                     c.heightCm,
                     c.weightKg,
                     c.goal.orEmpty()
                 )
-                if (memberSummary.isNotBlank()) {
-                    Text(
-                        text = memberSummary,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurface
+
+                androidx.compose.material3.Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = androidx.compose.material3.CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
                     )
-                } else {
-                    Text(
-                        text = "No age, height, weight, or goal on file yet. They appear here when set on the client record.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                c.foodRestrictions?.takeIf { it.isNotBlank() }?.let { food ->
-                    Spacer(modifier = Modifier.height(12.dp))
-                    androidx.compose.material3.Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = androidx.compose.material3.CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-                        )
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(2.dp)
-                        ) {
-                            Text("Food restrictions: $food")
+                        Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.Top) {
+                            Box(
+                                modifier = Modifier
+                                    .size(92.dp)
+                                    .clip(CircleShape)
+                                    .background(BurgundyPrimary.copy(alpha = 0.12f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                val avatarUrl = profile?.avatarUrl?.trim()?.takeIf { it.isNotEmpty() }
+                                if (avatarUrl != null) {
+                                    AsyncImage(
+                                        model = ImageRequest.Builder(context)
+                                            .data(avatarUrl)
+                                            .crossfade(true)
+                                            .build(),
+                                        contentDescription = "Client profile photo",
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                } else {
+                                    Icon(
+                                        imageVector = Icons.Default.Person,
+                                        contentDescription = null,
+                                        tint = BurgundyPrimary,
+                                        modifier = Modifier.size(48.dp)
+                                    )
+                                }
+                            }
+
+                            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                ClientDetailRow("Email", profile?.email.cleanOrFallback("Not available"))
+                                ClientDetailRow("Phone", c.phone.cleanOrFallback("Not provided"))
+                                ClientDetailRow("Birthday", displayPostgresDate(c.birthDate) ?: "Not provided")
+                                ClientDetailRow("Member since", displayPostgresDate(c.createdAt) ?: "Not available")
+                            }
                         }
+
+                        if (memberSummary.isNotBlank()) {
+                            Text(
+                                text = memberSummary,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        } else {
+                            Text(
+                                text = "No age, height, weight, or goal on file yet. They appear here when set on the client record.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        ClientDetailRow("Medical notes", c.medicalConditions.cleanOrFallback("Not provided"))
+                        ClientDetailRow("Food restrictions", c.foodRestrictions.cleanOrFallback("Not provided"))
+                        ClientDetailRow("Meals per day", c.mealsPerDay.cleanOrFallback("Not provided"))
+                        ClientDetailRow("Workout frequency", c.workoutFrequency.cleanOrFallback("Not provided"))
                     }
                 }
 
@@ -652,6 +694,34 @@ private fun PrivSwitchRow(
             colors = SwitchDefaults.colors(checkedThumbColor = BurgundyPrimary)
         )
     }
+}
+
+@Composable
+private fun ClientDetailRow(label: String, value: String) {
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(
+            text = label.uppercase(),
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+    }
+}
+
+private fun String?.cleanOrFallback(fallback: String): String {
+    val trimmed = this?.trim().orEmpty()
+    return trimmed.ifEmpty { fallback }
+}
+
+private fun displayPostgresDate(raw: String?): String? {
+    val day = raw?.trim()?.take(10)?.takeIf { it.isNotEmpty() } ?: return null
+    return runCatching { LocalDate.parse(day).toDisplayDate() }.getOrNull() ?: day
 }
 
 @Composable

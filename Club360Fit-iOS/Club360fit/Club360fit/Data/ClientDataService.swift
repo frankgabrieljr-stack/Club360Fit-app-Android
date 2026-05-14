@@ -100,6 +100,20 @@ enum ClientDataService {
         let role: String
     }
 
+    /// Profile row for a specific member auth user. Coaches can read this through `profiles` admin RLS.
+    static func fetchProfileForUser(userId: String) async throws -> CoachDirectoryProfileRow? {
+        let trimmed = userId.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        let rows: [CoachDirectoryProfileRow] = try await db
+            .from("profiles")
+            .select("id, full_name, email, avatar_url, role")
+            .eq("id", value: trimmed)
+            .limit(1)
+            .execute()
+            .value
+        return rows.first
+    }
+
     /// Coach accounts (`profiles.role` = admin) so admins can copy another coach’s Auth user id. Requires admin JWT (RLS).
     static func fetchCoachDirectoryProfiles() async throws -> [CoachDirectoryProfileRow] {
         try await db

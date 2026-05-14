@@ -6,6 +6,7 @@ struct CreateAccountView: View {
     @Environment(Club360AuthSession.self) private var auth: Club360AuthSession
     @State private var name = ""
     @State private var age = ""
+    @State private var birthDate = ""
     @State private var height = ""
     @State private var weight = ""
     @State private var phone = ""
@@ -45,6 +46,10 @@ struct CreateAccountView: View {
                     .foregroundStyle(Club360Theme.cardTitle)
                 TextField("Age", text: $age)
                     .keyboardType(.numberPad)
+                    .foregroundStyle(Club360Theme.cardTitle)
+                TextField("Birthday (YYYY-MM-DD)", text: $birthDate)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
                     .foregroundStyle(Club360Theme.cardTitle)
                 TextField("Height (ft / in)", text: $height)
                     .foregroundStyle(Club360Theme.cardTitle)
@@ -101,6 +106,7 @@ struct CreateAccountView: View {
                             password: password,
                             name: name,
                             age: age,
+                            birthDate: birthDate,
                             height: height,
                             weight: weight,
                             phone: phone,

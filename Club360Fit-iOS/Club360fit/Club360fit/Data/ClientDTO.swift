@@ -9,6 +9,12 @@ struct ClientDTO: Decodable, Sendable {
     let age: Int?
     let heightCm: Int?
     let weightKg: Int?
+    let phone: String?
+    let birthDate: String?
+    let medicalConditions: String?
+    let foodRestrictions: String?
+    let mealsPerDay: String?
+    let workoutFrequency: String?
     let goal: String?
     let canViewNutrition: Bool
     let canViewWorkouts: Bool
@@ -25,6 +31,12 @@ struct ClientDTO: Decodable, Sendable {
         case age
         case heightCm = "height_cm"
         case weightKg = "weight_kg"
+        case phone
+        case birthDate = "birth_date"
+        case medicalConditions = "medical_conditions"
+        case foodRestrictions = "food_restrictions"
+        case mealsPerDay = "meals_per_day"
+        case workoutFrequency = "workout_frequency"
         case goal
         case canViewNutrition = "can_view_nutrition"
         case canViewWorkouts = "can_view_workouts"
@@ -42,6 +54,12 @@ struct ClientDTO: Decodable, Sendable {
         age = try c.decodeIfPresent(Int.self, forKey: .age)
         heightCm = try c.decodeIfPresent(Int.self, forKey: .heightCm)
         weightKg = try c.decodeIfPresent(Int.self, forKey: .weightKg)
+        phone = try c.decodeIfPresent(String.self, forKey: .phone)
+        birthDate = try c.decodeIfPresent(String.self, forKey: .birthDate)
+        medicalConditions = try c.decodeIfPresent(String.self, forKey: .medicalConditions)
+        foodRestrictions = try c.decodeIfPresent(String.self, forKey: .foodRestrictions)
+        mealsPerDay = try c.decodeIfPresent(String.self, forKey: .mealsPerDay)
+        workoutFrequency = try c.decodeIfPresent(String.self, forKey: .workoutFrequency)
         goal = try c.decodeIfPresent(String.self, forKey: .goal)
         canViewNutrition = try c.decodeIfPresent(Bool.self, forKey: .canViewNutrition) ?? false
         canViewWorkouts = try c.decodeIfPresent(Bool.self, forKey: .canViewWorkouts) ?? false

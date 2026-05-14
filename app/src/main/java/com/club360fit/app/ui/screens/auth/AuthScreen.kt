@@ -209,6 +209,17 @@ fun AuthScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
+                OutlinedTextField(
+                    value = state.birthDate,
+                    onValueChange = viewModel::updateBirthDate,
+                    label = { Text("Birthday (YYYY-MM-DD)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = BurgundyPrimary, focusedLabelColor = BurgundyPrimary, cursorColor = BurgundyPrimary)
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
                 // Imperial Weight
                 val weightKg = state.weight.toIntOrNull() ?: 0
                 var weightLbsText by remember(weightKg) { mutableStateOf(if (weightKg > 0) weightKg.toPounds().toString() else "") }

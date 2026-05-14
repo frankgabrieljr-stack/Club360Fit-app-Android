@@ -26,6 +26,16 @@ final class ClientHomeViewModel {
         return r == "admin" ? "App · Admin" : "App · Client"
     }
 
+    var memberEmail: String?
+    var memberAvatarURLString: String?
+    var memberPhone: String?
+    var memberBirthDate: String?
+    var memberMedicalConditions: String?
+    var memberFoodRestrictions: String?
+    var memberMealsPerDay: String?
+    var memberWorkoutFrequency: String?
+    var memberGoal: String?
+
     /// Age, height, weight, goal from `public.clients` (coach client hub).
     var memberProfileSummaryLine: String = ""
 
@@ -147,11 +157,27 @@ final class ClientHomeViewModel {
 
         let authUid = row.userId.trimmingCharacters(in: .whitespacesAndNewlines)
         if !authUid.isEmpty {
-            memberPlatformRole = try? await ClientDataService.fetchProfileRoleForUser(userId: authUid)
+            let profile = try? await ClientDataService.fetchProfileForUser(userId: authUid)
+            if let role = profile?.role {
+                memberPlatformRole = role
+            } else {
+                memberPlatformRole = try? await ClientDataService.fetchProfileRoleForUser(userId: authUid)
+            }
+            memberEmail = Self.clean(profile?.email)
+            memberAvatarURLString = Self.clean(profile?.avatar_url)
         } else {
             memberPlatformRole = nil
+            memberEmail = nil
+            memberAvatarURLString = nil
         }
 
+        memberPhone = Self.clean(row.phone)
+        memberBirthDate = Self.clean(row.birthDate)
+        memberMedicalConditions = Self.clean(row.medicalConditions)
+        memberFoodRestrictions = Self.clean(row.foodRestrictions)
+        memberMealsPerDay = Self.clean(row.mealsPerDay)
+        memberWorkoutFrequency = Self.clean(row.workoutFrequency)
+        memberGoal = Self.clean(row.goal)
         memberProfileSummaryLine = row.memberSummaryLine
     }
 
@@ -160,6 +186,15 @@ final class ClientHomeViewModel {
         clientId = nil
         memberAuthUserId = nil
         memberPlatformRole = nil
+        memberEmail = nil
+        memberAvatarURLString = nil
+        memberPhone = nil
+        memberBirthDate = nil
+        memberMedicalConditions = nil
+        memberFoodRestrictions = nil
+        memberMealsPerDay = nil
+        memberWorkoutFrequency = nil
+        memberGoal = nil
         memberSinceStartOfDay = nil
         welcomeName = "there"
         currentWorkoutTitle = nil
@@ -173,6 +208,11 @@ final class ClientHomeViewModel {
         canViewEvents = false
         canViewPayments = false
         memberProfileSummaryLine = ""
+    }
+
+    private static func clean(_ value: String?) -> String? {
+        let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return trimmed.isEmpty ? nil : trimmed
     }
 
     private static func applyScheduleSummary(events: [ScheduleEventDTO], to model: ClientHomeViewModel) {
