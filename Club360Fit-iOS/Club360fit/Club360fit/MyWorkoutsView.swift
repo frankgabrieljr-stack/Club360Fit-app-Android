@@ -3,6 +3,8 @@ import SwiftUI
 
 /// Client workouts — mirrors Android `MyWorkoutsScreen`.
 struct MyWorkoutsView: View {
+    var isCoachReviewing = false
+
     @Environment(ClientHomeViewModel.self) private var home: ClientHomeViewModel
     @State private var model = MyWorkoutsViewModel()
     @State private var showIntroHelp = false
@@ -67,10 +69,11 @@ struct MyWorkoutsView: View {
                     Club360InfoSectionHeader(
                         title: "How this screen works",
                         helpTitle: nil,
-                        helpBody:
-                            "Your coach sets how many sessions to aim for this week and writes each plan below. "
-                            + "When you finish a workout today, tap Log a workout today once—your bar and percentage update. "
-                            + "You can log once per calendar day; the cards are your assigned programs to follow.",
+                        helpBody: isCoachReviewing
+                            ? "This is a read-only coach view. Review the client's workout plans and sessions they logged this week; clients log their own workouts from their app."
+                            : "Your coach sets how many sessions to aim for this week and writes each plan below. "
+                                + "When you finish a workout today, tap Log a workout today once—your bar and percentage update. "
+                                + "You can log once per calendar day; the cards are your assigned programs to follow.",
                         isExpanded: $showIntroHelp
                     )
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -86,9 +89,10 @@ struct MyWorkoutsView: View {
                             title: "This week",
                             uppercaseSectionTitle: true,
                             helpTitle: "Weekly sessions",
-                            helpBody:
-                                "The bar tracks how many workouts you’ve logged this week versus your coach’s target. "
-                                + "Segments fill as you progress; the count and percentage update when you log a session.",
+                            helpBody: isCoachReviewing
+                                ? "This tracks sessions the client logged for the current Sunday-to-Saturday week."
+                                : "The bar tracks how many workouts you’ve logged this week versus your coach’s target. "
+                                    + "Segments fill as you progress; the count and percentage update when you log a session.",
                             isExpanded: $showThisWeekHelp
                         )
 
@@ -102,37 +106,78 @@ struct MyWorkoutsView: View {
                     .padding(18)
                     .club360Glass(cornerRadius: 28)
 
-                    Button {
-                        Task {
-                            guard let cid = home.clientId else { return }
-                            await model.logToday(clientId: cid, noteToCoach: workoutNoteForCoach)
-                            workoutNoteForCoach = ""
+                    if isCoachReviewing {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Client session logs")
+                                .font(.subheadline.weight(.bold))
+                                .foregroundStyle(Club360Theme.cardTitle)
+                                .textCase(.uppercase)
+                                .tracking(0.6)
+                            if model.sessionLogs.isEmpty {
+                                Text("No sessions logged by this client this week yet.")
+                                    .font(.body)
+                                    .foregroundStyle(Club360Theme.captionOnGlass)
+                            } else {
+                                ForEach(model.sessionLogs, id: \.rowIdentity) { log in
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        Text(Club360DateFormats.displayDay(fromPostgresDay: log.sessionDate))
+                                            .font(.headline.weight(.semibold))
+                                            .foregroundStyle(Club360Theme.cardTitle)
+                                        let note = (log.noteToCoach ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                                        if note.isEmpty {
+                                            Text("No note from client.")
+                                                .font(.caption)
+                                                .foregroundStyle(Club360Theme.captionOnGlass)
+                                        } else {
+                                            Text("Client note: \(note)")
+                                                .font(.caption.weight(.medium))
+                                                .foregroundStyle(Club360Theme.captionOnGlass)
+                                        }
+                                        if let reply = log.coachReply?.trimmingCharacters(in: .whitespacesAndNewlines), !reply.isEmpty {
+                                            Text("Coach reply: \(reply)")
+                                                .font(.caption.weight(.medium))
+                                                .foregroundStyle(Club360Theme.tealDark)
+                                        }
+                                    }
+                                    .padding(14)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .club360Glass(cornerRadius: 20)
+                                }
+                            }
                         }
-                    } label: {
-                        Text(model.isLogging ? "Saving…" : "Log a workout today")
-                    }
-                    .buttonStyle(Club360PrimaryGradientButtonStyle())
-                    .disabled(model.isLogging || home.clientId == nil)
-                    .opacity(model.isLogging ? 0.7 : 1)
+                    } else {
+                        Button {
+                            Task {
+                                guard let cid = home.clientId else { return }
+                                await model.logToday(clientId: cid, noteToCoach: workoutNoteForCoach)
+                                workoutNoteForCoach = ""
+                            }
+                        } label: {
+                            Text(model.isLogging ? "Saving…" : "Log a workout today")
+                        }
+                        .buttonStyle(Club360PrimaryGradientButtonStyle())
+                        .disabled(model.isLogging || home.clientId == nil)
+                        .opacity(model.isLogging ? 0.7 : 1)
 
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Optional note to coach")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Club360Theme.cardTitle)
-                        TextField(
-                            "Example: I swapped squats for split squats due to knee pain.",
-                            text: $workoutNoteForCoach,
-                            axis: .vertical
-                        )
-                        .lineLimit(2 ... 4)
-                        .textFieldStyle(.roundedBorder)
-                        Text("Sent to your coach with today’s workout log.")
-                            .font(.caption)
-                            .foregroundStyle(Club360Theme.captionOnGlass)
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Optional note to coach")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(Club360Theme.cardTitle)
+                            TextField(
+                                "Example: I swapped squats for split squats due to knee pain.",
+                                text: $workoutNoteForCoach,
+                                axis: .vertical
+                            )
+                            .lineLimit(2 ... 4)
+                            .textFieldStyle(.roundedBorder)
+                            Text("Sent to your coach with today’s workout log.")
+                                .font(.caption)
+                                .foregroundStyle(Club360Theme.captionOnGlass)
+                        }
+                        .padding(14)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .club360Glass(cornerRadius: 20)
                     }
-                    .padding(14)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .club360Glass(cornerRadius: 20)
 
                     if let toast = model.toast {
                         Text(toast)
@@ -221,6 +266,7 @@ private final class MyWorkoutsViewModel {
     var isLoading = true
     var errorMessage: String?
     var plans: [WorkoutPlanDTO] = []
+    var sessionLogs: [WorkoutSessionLogDTO] = []
     var weekLogged = 0
     var weekExpected = 4
     var isLogging = false
@@ -241,6 +287,10 @@ private final class MyWorkoutsViewModel {
                 clientId: clientId,
                 weekStart: todayWeekStart
             )
+            sessionLogs = try await ClientDataService.fetchWorkoutSessionLogsForWeek(
+                clientId: clientId,
+                weekStart: todayWeekStart
+            )
             weekExpected = Self.clampExpected(list.first?.expectedSessions)
         } catch {
             errorMessage = error.localizedDescription
@@ -250,6 +300,10 @@ private final class MyWorkoutsViewModel {
     func refreshWeek(clientId: String) async {
         do {
             weekLogged = try await ClientDataService.workoutSessionCountForWeek(
+                clientId: clientId,
+                weekStart: todayWeekStart
+            )
+            sessionLogs = try await ClientDataService.fetchWorkoutSessionLogsForWeek(
                 clientId: clientId,
                 weekStart: todayWeekStart
             )

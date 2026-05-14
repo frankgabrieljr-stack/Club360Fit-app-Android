@@ -1,6 +1,5 @@
 package com.club360fit.app.data
 
-import java.time.DayOfWeek
 import java.time.LocalDate
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -17,7 +16,7 @@ data class AdherenceSnapshot(
 
 object AdherenceMetricsCalculator {
 
-    fun weekStartSunday(d: LocalDate): LocalDate = d.with(DayOfWeek.SUNDAY)
+    fun weekStartSunday(d: LocalDate): LocalDate = d.minusDays((d.dayOfWeek.value % 7).toLong())
 
     fun weekEndSaturday(weekStart: LocalDate): LocalDate = weekStart.plusDays(6)
 

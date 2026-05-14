@@ -47,16 +47,16 @@ Deno.serve(async (req: Request) => {
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     if (!serviceRoleKey) {
       return json(500, { error: "SUPABASE_SERVICE_ROLE_KEY not configured" });
     }
 
-    const userClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
+    const adminClient = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
     });
-    const { data: userData, error: userErr } = await userClient.auth.getUser();
+    const bearerToken = authHeader.replace(/^Bearer\s+/i, "");
+    const { data: userData, error: userErr } = await adminClient.auth.getUser(bearerToken);
     if (userErr || !userData.user) {
       return json(401, { error: "Invalid session" });
     }
@@ -67,10 +67,6 @@ Deno.serve(async (req: Request) => {
     const body = payload.body?.trim() ?? "";
     if (!clientId) return json(400, { error: "client_id required" });
     if (!title) return json(400, { error: "title required" });
-
-    const adminClient = createClient(supabaseUrl, serviceRoleKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
 
     const { data: clientRowRaw, error: clientErr } = await adminClient
       .from("clients")
@@ -142,6 +138,16 @@ Deno.serve(async (req: Request) => {
         }
       }
     }
+
+    console.log("device_push_result", {
+      callerId,
+      recipientUserId,
+      tokenCount: tokens?.length ?? 0,
+      sent,
+      errors,
+      kind: payload.kind ?? null,
+      refType: payload.ref_type ?? null,
+    });
 
     return json(200, { ok: true, sent, errors });
   } catch (e) {

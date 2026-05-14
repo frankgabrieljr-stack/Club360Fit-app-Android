@@ -4,13 +4,12 @@ import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.time.DayOfWeek
 import java.time.LocalDate
 
 object WorkoutSessionLogRepository {
     private val client = SupabaseClient.client
 
-    fun weekStartSunday(d: LocalDate): LocalDate = d.with(DayOfWeek.SUNDAY)
+    fun weekStartSunday(d: LocalDate): LocalDate = d.minusDays((d.dayOfWeek.value % 7).toLong())
 
     suspend fun logSession(
         clientId: String,

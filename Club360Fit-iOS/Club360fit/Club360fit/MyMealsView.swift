@@ -3,6 +3,8 @@ import SwiftUI
 
 /// Meal plans + entry to meal photos — mirrors Android `MyMealsScreen`.
 struct MyMealsView: View {
+    var isCoachReviewing = false
+
     @Environment(ClientHomeViewModel.self) private var home: ClientHomeViewModel
     @State private var model = MyMealsViewModel()
     @State private var showIntroHelp = false
@@ -66,8 +68,9 @@ struct MyMealsView: View {
                     Club360InfoSectionHeader(
                         title: "How this screen works",
                         helpTitle: nil,
-                        helpBody:
-                            "Your coach posts weekly meal plans below. Use Meal photos to send pictures of what you eat so they can review and give feedback.",
+                        helpBody: isCoachReviewing
+                            ? "This is a read-only coach view of assigned meal plans. Open meal photos to review what the client uploaded and leave feedback."
+                            : "Your coach posts weekly meal plans below. Use Meal photos to send pictures of what you eat so they can review and give feedback.",
                         isExpanded: $showIntroHelp
                     )
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -78,9 +81,10 @@ struct MyMealsView: View {
                         Club360InfoSectionHeader(
                             title: "Meal photos",
                             helpTitle: "Photo log",
-                            helpBody:
-                                "Open the photo log to capture meals with your camera or choose from your library. "
-                                + "Your coach sees these in their inbox.",
+                            helpBody: isCoachReviewing
+                                ? "Open the photo log to review photos uploaded by this client. Coaches can leave feedback but cannot upload meals for clients."
+                                : "Open the photo log to capture meals with your camera or choose from your library. "
+                                    + "Your coach sees these in their inbox.",
                             isExpanded: $showMealPhotosHelp
                         )
                         NavigationLink {
@@ -100,7 +104,7 @@ struct MyMealsView: View {
                                         .font(.title2)
                                         .foregroundStyle(Club360Theme.tealDark)
                                 }
-                                Text("Open meal photos")
+                                Text(isCoachReviewing ? "Review meal photos" : "Open meal photos")
                                     .font(.headline.weight(.semibold))
                                     .foregroundStyle(Club360Theme.cardTitle)
                                 Spacer(minLength: 0)

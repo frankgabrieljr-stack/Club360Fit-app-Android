@@ -189,6 +189,18 @@ enum ClientDataService {
         return rows.count
     }
 
+    static func fetchWorkoutSessionLogsForWeek(clientId: String, weekStart: Date) async throws -> [WorkoutSessionLogDTO] {
+        let key = Club360DateFormats.dayString(weekStart)
+        return try await db
+            .from("workout_session_logs")
+            .select()
+            .eq("client_id", value: clientId)
+            .eq("week_start", value: key)
+            .order("session_date", ascending: false)
+            .execute()
+            .value
+    }
+
     /// Insert a session log; ignores duplicate-day errors like Android.
     static func logWorkoutSession(clientId: String, sessionDate: Date, noteToCoach: String? = nil) async {
         let trimmedNote = noteToCoach?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""

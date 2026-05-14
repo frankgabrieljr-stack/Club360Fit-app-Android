@@ -3,6 +3,8 @@ import SwiftUI
 
 /// Daily habits — log per day; browse full history via date picker + list (`daily_habit_logs`).
 struct MyDailyHabitsView: View {
+    var isCoachReviewing = false
+
     @Environment(ClientHomeViewModel.self) private var home: ClientHomeViewModel
 
     @State private var selectedDate = Calendar.current.startOfDay(for: Date())
@@ -77,8 +79,9 @@ struct MyDailyHabitsView: View {
                     Club360InfoSectionHeader(
                         title: "How this screen works",
                         helpTitle: nil,
-                        helpBody:
-                            "Pick any day to view or edit water, steps, and sleep. Save once per day; your history below lists past entries—tap a row to jump back to that day.",
+                        helpBody: isCoachReviewing
+                            ? "This is a read-only coach view. Review water, steps, and sleep entries the client saved from their app."
+                            : "Pick any day to view or edit water, steps, and sleep. Save once per day; your history below lists past entries—tap a row to jump back to that day.",
                         isExpanded: $showIntroHelp
                     )
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -87,11 +90,12 @@ struct MyDailyHabitsView: View {
 
                     VStack(alignment: .leading, spacing: 14) {
                         Club360InfoSectionHeader(
-                            title: "Log your habits",
+                            title: isCoachReviewing ? "Habit details" : "Log your habits",
                             helpTitle: "Daily log",
-                            helpBody:
-                                "Choose a day with the picker (from when you joined through today). "
-                                + "Log once per day; streaks count days with any save. Water, steps, and sleep are optional.",
+                            helpBody: isCoachReviewing
+                                ? "Choose a day to view what the client logged. Coaches cannot change client habit entries."
+                                : "Choose a day with the picker (from when you joined through today). "
+                                    + "Log once per day; streaks count days with any save. Water, steps, and sleep are optional.",
                             isExpanded: $showLogCardHelp
                         )
 
@@ -133,14 +137,23 @@ struct MyDailyHabitsView: View {
                             .font(.caption)
                             .foregroundStyle(Club360Theme.captionOnGlass)
 
-                        Toggle("Water goal met", isOn: $waterDone)
-                            .tint(Club360Theme.tealDark)
+                        if isCoachReviewing {
+                            Text("Water goal: \(waterDone ? "met" : "not marked")")
+                                .foregroundStyle(Club360Theme.cardTitle)
+                            Text(stepsText.isEmpty ? "Steps: not logged" : "Steps: \(stepsText)")
+                                .foregroundStyle(Club360Theme.cardTitle)
+                            Text(sleepText.isEmpty ? "Sleep: not logged" : "Sleep: \(sleepText) hours")
+                                .foregroundStyle(Club360Theme.cardTitle)
+                        } else {
+                            Toggle("Water goal met", isOn: $waterDone)
+                                .tint(Club360Theme.tealDark)
 
-                        TextField("Steps (optional)", text: $stepsText)
-                            .keyboardType(.numberPad)
+                            TextField("Steps (optional)", text: $stepsText)
+                                .keyboardType(.numberPad)
 
-                        TextField("Sleep (hours, optional)", text: $sleepText)
-                            .keyboardType(.decimalPad)
+                            TextField("Sleep (hours, optional)", text: $sleepText)
+                                .keyboardType(.decimalPad)
+                        }
 
                         if let errorMessage {
                             Text(errorMessage).font(.footnote).foregroundStyle(.red)
@@ -151,14 +164,20 @@ struct MyDailyHabitsView: View {
                                 .foregroundStyle(Club360Theme.tealDark)
                         }
 
-                        Button {
-                            Task { await save() }
-                        } label: {
-                            Text(isSaving ? "Saving…" : (isToday ? "Save today" : "Save this day"))
+                        if isCoachReviewing {
+                            Text("Only the client can save or edit habit logs.")
+                                .font(.footnote.weight(.medium))
+                                .foregroundStyle(Club360Theme.captionOnGlass)
+                        } else {
+                            Button {
+                                Task { await save() }
+                            } label: {
+                                Text(isSaving ? "Saving…" : (isToday ? "Save today" : "Save this day"))
+                            }
+                            .buttonStyle(Club360PrimaryGradientButtonStyle())
+                            .disabled(isSaving || home.clientId == nil)
+                            .opacity(isSaving ? 0.75 : 1)
                         }
-                        .buttonStyle(Club360PrimaryGradientButtonStyle())
-                        .disabled(isSaving || home.clientId == nil)
-                        .opacity(isSaving ? 0.75 : 1)
                     }
                     .padding(18)
                     .club360Glass(cornerRadius: 28)
@@ -168,12 +187,13 @@ struct MyDailyHabitsView: View {
                             Club360InfoSectionHeader(
                                 title: "Your log history",
                                 helpTitle: "History",
-                                helpBody:
-                                    "Newest entries appear first. Tap a row to load that day in the form above and make changes.",
+                                helpBody: isCoachReviewing
+                                    ? "Newest entries appear first. Tap a row to view that day above."
+                                    : "Newest entries appear first. Tap a row to load that day in the form above and make changes.",
                                 isExpanded: $showHistoryHelp
                             )
 
-                            Text("Tap a day to edit it. Newest first.")
+                            Text(isCoachReviewing ? "Tap a day to view it. Newest first." : "Tap a day to edit it. Newest first.")
                                 .font(.caption)
                                 .foregroundStyle(Club360Theme.captionOnGlass)
 

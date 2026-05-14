@@ -9,28 +9,23 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -41,7 +36,6 @@ import com.club360fit.app.data.ProgressRepository
 import com.club360fit.app.ui.theme.BurgundyPrimary
 import com.club360fit.app.ui.utils.toDisplayDate
 import com.club360fit.app.ui.utils.formatWeightLbsFromKg
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,12 +46,8 @@ fun ClientProgressScreen(
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     var checkIns by remember { mutableStateOf<List<ProgressCheckInDto>>(emptyList()) }
-    var showAddDialog by remember { mutableStateOf(false) }
-    var refreshKey by remember { mutableIntStateOf(0) }
-    val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
 
-    LaunchedEffect(clientId, refreshKey) {
+    LaunchedEffect(clientId) {
         isLoading = true
         error = null
         try {
@@ -70,7 +60,6 @@ fun ClientProgressScreen(
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Progress") },
@@ -94,6 +83,7 @@ fun ClientProgressScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -103,6 +93,12 @@ fun ClientProgressScreen(
                 }
             } else {
                 error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+
+                Text(
+                    text = "Review-only coach view. Progress check-ins are entered by the client from their app.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
 
                 if (checkIns.isEmpty()) {
                     Text(
@@ -142,37 +138,13 @@ fun ClientProgressScreen(
                     }
                 }
 
-                Button(
-                    onClick = { showAddDialog = true },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = BurgundyPrimary.copy(alpha = 0.1f),
-                        contentColor = BurgundyPrimary
-                    )
-                ) {
-                    Text("Add progress check-in")
-                }
+                Text(
+                    text = "Only the client can log or edit progress check-ins.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
-    }
-
-    if (showAddDialog) {
-        AddProgressCheckInDialog(
-            clientId = clientId,
-            onDismiss = { showAddDialog = false },
-            onSaved = {
-                showAddDialog = false
-                refreshKey++
-            },
-            onSubmitResult = { success, message ->
-                scope.launch {
-                    snackbarHostState.showSnackbar(
-                        message,
-                        duration = if (success) SnackbarDuration.Short else SnackbarDuration.Long
-                    )
-                }
-            }
-        )
     }
 }
 

@@ -4,6 +4,8 @@ import UIKit
 
 /// Mirrors Android `MyPaymentsScreen` (Venmo / Zelle / confirmations / history).
 struct MyPaymentsView: View {
+    var isCoachReviewing = false
+
     @Environment(ClientHomeViewModel.self) private var home: ClientHomeViewModel
     @State private var model = MyPaymentsViewModel()
     @State private var showConfirm = false
@@ -83,9 +85,10 @@ struct MyPaymentsView: View {
                         Club360InfoSectionHeader(
                             title: "How this screen works",
                             helpTitle: nil,
-                            helpBody:
-                                "Your coach sets how to pay (Venmo, Zelle, etc.), what’s due next, and can log payments on your history. "
-                                + "After you pay outside the app, tap I paid to notify them.",
+                            helpBody: isCoachReviewing
+                                ? "This is a read-only coach preview of the member payment screen. Clients confirm payments from their own app."
+                                : "Your coach sets how to pay (Venmo, Zelle, etc.), what’s due next, and can log payments on your history. "
+                                    + "After you pay outside the app, tap I paid to notify them.",
                             isExpanded: $showIntroHelp
                         )
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -118,8 +121,10 @@ struct MyPaymentsView: View {
                                     title: "Venmo",
                                     helpTitle: "Pay with Venmo",
                                     helpBody:
-                                        "Use your coach’s link or QR to pay in the Venmo app. "
-                                        + "After paying, tap I paid so they can match it to your account.",
+                                        isCoachReviewing
+                                            ? "This is the Venmo detail the client sees in their app."
+                                            : "Use your coach’s link or QR to pay in the Venmo app. "
+                                                + "After paying, tap I paid so they can match it to your account.",
                                     isExpanded: $showVenmoHelp
                                 )
                                 if let u = URL(string: url) {
@@ -148,8 +153,10 @@ struct MyPaymentsView: View {
                                     title: "Zelle",
                                     helpTitle: "Pay with Zelle",
                                     helpBody:
-                                        "Send to the email or phone your coach listed. Copy a value with the clipboard icon, "
-                                        + "then confirm in your banking app and tap I paid here.",
+                                        isCoachReviewing
+                                            ? "This is the Zelle detail the client sees in their app."
+                                            : "Send to the email or phone your coach listed. Copy a value with the clipboard icon, "
+                                                + "then confirm in your banking app and tap I paid here.",
                                     isExpanded: $showZelleHelp
                                 )
                                 if let em = s.zelleEmail?.trimmingCharacters(in: .whitespacesAndNewlines), !em.isEmpty {
@@ -167,15 +174,21 @@ struct MyPaymentsView: View {
                             .club360Glass(cornerRadius: 28)
                         }
 
-                        Button {
-                            showConfirm = true
-                        } label: {
-                            Text("I paid")
+                        if isCoachReviewing {
+                            Text("Only the client can submit payment confirmations.")
+                                .font(.footnote.weight(.medium))
+                                .foregroundStyle(Club360Theme.captionOnGlass)
+                        } else {
+                            Button {
+                                showConfirm = true
+                            } label: {
+                                Text("I paid")
+                            }
+                            .buttonStyle(Club360PrimaryGradientButtonStyle())
                         }
-                        .buttonStyle(Club360PrimaryGradientButtonStyle())
 
                         if !model.confirmations.isEmpty {
-                            Text("Your confirmations")
+                            Text(isCoachReviewing ? "Client confirmations" : "Your confirmations")
                                 .font(.headline.weight(.semibold))
                                 .foregroundStyle(Club360Theme.cardTitle)
                             ForEach(model.confirmations) { c in

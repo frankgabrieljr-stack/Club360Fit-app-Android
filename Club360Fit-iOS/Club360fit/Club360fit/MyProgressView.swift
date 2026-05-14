@@ -3,6 +3,8 @@ import SwiftUI
 
 /// Client progress check-ins — mirrors Android `MyProgressScreen`.
 struct MyProgressView: View {
+    var isCoachReviewing = false
+
     @Environment(ClientHomeViewModel.self) private var home: ClientHomeViewModel
     @State private var model = MyProgressViewModel()
     @State private var showLogSheet = false
@@ -33,7 +35,7 @@ struct MyProgressView: View {
             await model.load(clientId: cid)
         }
         .sheet(isPresented: $showLogSheet) {
-            if let cid = home.clientId {
+            if !isCoachReviewing, let cid = home.clientId {
                 LogProgressSheet(clientId: cid) {
                     Task { await model.load(clientId: cid) }
                 }
@@ -67,9 +69,10 @@ struct MyProgressView: View {
                     Club360InfoSectionHeader(
                         title: "How this screen works",
                         helpTitle: nil,
-                        helpBody:
-                            "Each card is a check-in your coach can review: optional weight, whether you trained and followed meals, and notes. "
-                            + "Tap Log progress to add a new entry for a date.",
+                        helpBody: isCoachReviewing
+                            ? "This is a read-only coach view. Review progress check-ins the client submitted from their app."
+                            : "Each card is a check-in your coach can review: optional weight, whether you trained and followed meals, and notes. "
+                                + "Tap Log progress to add a new entry for a date.",
                         isExpanded: $showIntroHelp
                     )
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -139,12 +142,19 @@ struct MyProgressView: View {
                         }
                     }
 
-                    Button {
-                        showLogSheet = true
-                    } label: {
-                        Text("Log progress")
+                    if isCoachReviewing {
+                        Text("Only the client can log or edit progress check-ins.")
+                            .font(.footnote.weight(.medium))
+                            .foregroundStyle(Club360Theme.captionOnGlass)
+                            .padding(.horizontal, 4)
+                    } else {
+                        Button {
+                            showLogSheet = true
+                        } label: {
+                            Text("Log progress")
+                        }
+                        .buttonStyle(Club360PrimaryGradientButtonStyle())
                     }
-                    .buttonStyle(Club360PrimaryGradientButtonStyle())
                 }
                 .padding()
             }

@@ -1,13 +1,12 @@
 import Foundation
 
 extension Calendar {
-    /// Matches Android `WorkoutSessionLogRepository.weekStartSunday` → Java `LocalDate.with(DayOfWeek.SUNDAY)` (ISO week: Sunday is the last day of the week).
+    /// Sunday-start week containing the given date.
     static func weekStartSunday(containing date: Date) -> Date {
-        let cal = Calendar(identifier: .iso8601)
+        let cal = Calendar.current
         let day = cal.startOfDay(for: date)
-        let comps = cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: day)
-        guard let monday = cal.date(from: comps) else { return day }
-        return cal.date(byAdding: .day, value: 6, to: monday) ?? day
+        let daysSinceSunday = cal.component(.weekday, from: day) - 1
+        return cal.date(byAdding: .day, value: -daysSinceSunday, to: day) ?? day
     }
 }
 

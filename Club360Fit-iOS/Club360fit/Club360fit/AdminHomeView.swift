@@ -790,7 +790,7 @@ struct AdminClientHubView: View {
                         spacing: 12
                     ) {
                         NavigationLink {
-                            MyWorkoutsView()
+                            MyWorkoutsView(isCoachReviewing: true)
                                 .environment(homeModel)
                         } label: {
                             Club360HomeTile(
@@ -804,7 +804,7 @@ struct AdminClientHubView: View {
                         .opacity(homeModel.canViewWorkouts ? 1 : 0.45)
 
                         NavigationLink {
-                            MyMealsView()
+                            MyMealsView(isCoachReviewing: true)
                                 .environment(homeModel)
                         } label: {
                             Club360HomeTile(
@@ -818,7 +818,7 @@ struct AdminClientHubView: View {
                         .opacity(homeModel.canViewNutrition ? 1 : 0.45)
 
                         NavigationLink {
-                            MyProgressView()
+                            MyProgressView(isCoachReviewing: true)
                                 .environment(homeModel)
                         } label: {
                             Club360HomeTile(
@@ -830,7 +830,7 @@ struct AdminClientHubView: View {
                         }
 
                         NavigationLink {
-                            MyDailyHabitsView()
+                            MyDailyHabitsView(isCoachReviewing: true)
                                 .environment(homeModel)
                         } label: {
                             Club360HomeTile(
@@ -868,12 +868,12 @@ struct AdminClientHubView: View {
 
                         if homeModel.canViewPayments {
                             NavigationLink {
-                                MyPaymentsView()
+                                MyPaymentsView(isCoachReviewing: true)
                                     .environment(homeModel)
                             } label: {
                                 Club360HomeTile(
-                                    title: "Payments (preview)",
-                                    subtitle: "Same as member sees",
+                                    title: "Payments",
+                                    subtitle: "Review client view",
                                     systemImage: "banknote.fill",
                                     accent: Club360Theme.burgundy
                                 )

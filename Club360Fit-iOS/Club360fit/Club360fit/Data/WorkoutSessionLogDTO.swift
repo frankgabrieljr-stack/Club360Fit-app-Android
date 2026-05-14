@@ -19,6 +19,11 @@ struct WorkoutSessionLogDTO: Decodable, Sendable {
         case coachReply = "coach_reply"
         case coachRepliedAt = "coach_replied_at"
     }
+
+    var rowIdentity: String {
+        if let id, !id.isEmpty { return id }
+        return "\(clientId)-\(sessionDate)"
+    }
 }
 
 struct WorkoutSessionLogInsert: Encodable, Sendable {

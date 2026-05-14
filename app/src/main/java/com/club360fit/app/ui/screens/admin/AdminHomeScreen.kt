@@ -424,6 +424,9 @@ private enum class AdminScheduleQuickView {
     Calendar
 }
 
+private fun weekStartSunday(date: LocalDate): LocalDate =
+    date.minusDays((date.dayOfWeek.value % 7).toLong())
+
 @Composable
 private fun AdminScheduleOptionsTab(
     clients: List<ClientDto>,
@@ -432,7 +435,7 @@ private fun AdminScheduleOptionsTab(
     val state by viewModel.uiState.collectAsState()
     var selectedView by remember { mutableStateOf(AdminScheduleQuickView.Menu) }
     val today = LocalDate.now()
-    val weekStart = today.with(DayOfWeek.SUNDAY)
+    val weekStart = weekStartSunday(today)
     val weekEnd = weekStart.plusDays(6)
     val assignedIds = remember(clients) { clients.mapNotNull { it.id }.toSet() }
     val clientNameById = remember(clients) {
@@ -794,7 +797,7 @@ fun OverviewTab(
     val events = scheduleState.events
     val today = LocalDate.now()
 
-    val startOfWeek = today.with(DayOfWeek.SUNDAY)
+    val startOfWeek = weekStartSunday(today)
     val endOfWeek = startOfWeek.plusDays(6)
 
     val activeClients = clients.size
